@@ -7,5 +7,5 @@ BlockExplorer: https://explorer.mixairo.info
 
 Pool: https://pool.mixairo.info
 
-BitcoinTalk: 
+BitcoinTalk: https://bitcointalk.org/index.php?topic=4982784
 
