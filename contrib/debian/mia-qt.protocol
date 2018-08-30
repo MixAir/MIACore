@@ -1,0 +1,11 @@
+[Protocol]
+exec=mia-qt '%u'
+protocol=mia
+input=none
+output=none
+helper=true
+listing=
+reading=false
+writing=false
+makedir=false
+deleting=false
