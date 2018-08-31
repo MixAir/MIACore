@@ -10,10 +10,15 @@
 #include "utilstrencodings.h"
 #include "crypto/common.h"
 #include "crypto/xevan.h"
+#include "consensus/consensus.h"
 
 uint256 CBlockHeader::GetHash() const
 {
-    return XEVAN(BEGIN(nVersion), END(nNonce));
+    if(nTime <= PHI2_TIMESTAMP) {
+      return XEVAN(BEGIN(nVersion), END(nNonce));
+    } else {
+      return phi2_hash(BEGIN(nVersion), END(nNonce));
+    }
 }
 
 std::string CBlock::ToString() const
