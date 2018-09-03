@@ -31,6 +31,6 @@ enum {
     LOCKTIME_MEDIAN_TIME_PAST = (1 << 1),
 };
 
-static const int PHI2_TIMESTAMP = 1535676062;
+static const int PHI2_TIMESTAMP = 1535940000;
 
 #endif // BITCOIN_CONSENSUS_CONSENSUS_H
