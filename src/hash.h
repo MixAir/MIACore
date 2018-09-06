@@ -26,6 +26,20 @@
 #include "crypto/sph_simd.h"
 #include "crypto/sph_echo.h"
 
+// Initilised PHI
+#include "crypto/sph_skein.h"
+#include "crypto/sph_fugue.h"
+#include "crypto/sph_gost.h"
+
+// Phi2
+#include "crypto/lyra2/Lyra2.h"
+#include "crypto/common.h"
+
+#define PHI2_ALGO_ENABLE
+
+#include <iomanip>
+#include <openssl/sha.h>
+#include <sstream>
 #include <vector>
 
 typedef uint256 ChainCode;
@@ -48,6 +62,10 @@ GLOBAL sph_shavite512_context   z_shavite;
 GLOBAL sph_simd512_context      z_simd;
 GLOBAL sph_echo512_context      z_echo;
 
+GLOBAL sph_skein512_context     z_skein;
+GLOBAL sph_fugue512_context     z_fugue;
+GLOBAL sph_gost512_context      z_gost;
+
 #define fillz() do { \
     sph_blake512_init(&z_blake); \
     sph_bmw512_init(&z_bmw); \
@@ -60,6 +78,8 @@ GLOBAL sph_echo512_context      z_echo;
     sph_shavite512_init(&z_shavite); \
     sph_simd512_init(&z_simd); \
     sph_echo512_init(&z_echo); \
+    sph_fugue512_init(&z_fugue); \
+    sph_gost512_init(&z_gost); \
 } while (0)
 
 #define ZBLAKE (memcpy(&ctx_blake, &z_blake, sizeof(z_blake)))
@@ -68,6 +88,8 @@ GLOBAL sph_echo512_context      z_echo;
 #define ZJH (memcpy(&ctx_jh, &z_jh, sizeof(z_jh)))
 #define ZKECCAK (memcpy(&ctx_keccak, &z_keccak, sizeof(z_keccak)))
 #define ZSKEIN (memcpy(&ctx_skein, &z_skein, sizeof(z_skein)))
+#define ZFUGUE (memcpy(&ctx_fugue, &z_fugue, sizeof(z_fugue)))
+#define ZGOST (memcpy(&ctx_gost, &z_gost, sizeof(z_gost)))
 
 /* ----------- Bitcoin Hash ------------------------------------------------- */
 /** A hasher class for Bitcoin's 256-bit hash (double SHA-256). */
@@ -343,6 +365,48 @@ inline uint256 HashX11(const T1 pbegin, const T1 pend)
     sph_echo512_close(&ctx_echo, static_cast<void*>(&hash[10]));
 
     return hash[10].trim256();
+}
+
+template<typename T1>
+inline uint256 phi2_hash(const T1 pbegin, const T1 pend)
+{
+    unsigned char hash[128] = { 0 };
+    unsigned char hashA[64] = { 0 };
+    unsigned char hashB[64] = { 0 };
+    static unsigned char pblank[1];
+    uint512 output;
+    sph_cubehash512_context ctx_cubehash;
+    sph_jh512_context ctx_jh;
+    sph_gost512_context ctx_gost;
+    sph_echo512_context ctx_echo;
+    sph_skein512_context ctx_skein;
+     sph_cubehash512_init(&ctx_cubehash);
+    sph_cubehash512(&ctx_cubehash, (pbegin == pend ? pblank : static_cast<const void*>(&pbegin[0])), 80);
+    sph_cubehash512_close(&ctx_cubehash, (void*)hashB);
+     LYRA2(&hashA[ 0], 32, &hashB[ 0], 32, &hashB[ 0], 32, 1, 8, 8);
+    LYRA2(&hashA[32], 32, &hashB[32], 32, &hashB[32], 32, 1, 8, 8);
+     sph_jh512_init(&ctx_jh);
+    sph_jh512(&ctx_jh, (const void*)hashA, 64);
+    sph_jh512_close(&ctx_jh, (void*)hash);
+     if (hash[0] & 1) {
+        sph_gost512_init(&ctx_gost);
+        sph_gost512(&ctx_gost, (const void*)hash, 64);
+        sph_gost512_close(&ctx_gost, (void*)hash);
+    } else {
+        sph_echo512_init(&ctx_echo);
+        sph_echo512(&ctx_echo, (const void*)hash, 64);
+        sph_echo512_close(&ctx_echo, (void*)hash);
+        sph_echo512_init(&ctx_echo);
+        sph_echo512(&ctx_echo, (const void*)hash, 64);
+        sph_echo512_close(&ctx_echo, (void*)hash);
+    }
+    sph_skein512_init(&ctx_skein);
+    sph_skein512(&ctx_skein, (const void*)hash, 64);
+    sph_skein512_close(&ctx_skein, (void*)hash);
+     for (int i=0; i<32; i++)
+        hash[i] ^= hash[i+32];
+     memcpy((void *) &output, hash, 32);
+    return output.trim256();
 }
 
 #endif // BITCOIN_HASH_H

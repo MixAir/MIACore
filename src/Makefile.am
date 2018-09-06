@@ -398,6 +398,15 @@ crypto_libbitcoin_crypto_a_SOURCES += \
 		  crypto/sph_whirlpool.h \
 		  crypto/xevan.h
 
+# phi2
+crypto_libbitcoin_crypto_a_SOURCES += \
+			crypto/lyra2/Lyra2.c \
+			crypto/lyra2/Sponge.c \
+			crypto/gost.c \
+			crypto/lyra2/Lyra2.h \
+			crypto/lyra2/Sponge.h \
+			crypto/sph_gost.h
+
 # common: shared between miad, and mia-qt and non-server tools
 libbitcoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)

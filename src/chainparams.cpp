@@ -146,8 +146,8 @@ public:
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
             (    0, uint256S("0x00000b472ae3d421931662ecd3e20b909990e9801e2d5d21e80ce4321a86437c"))
-            (    2, uint256S("0x00000b0e252c02c41e100dcb814fc4dae523f596c04f6027cf25ab7700bbf197")),
-            1535645491, // * UNIX timestamp of last checkpoint block
+            ( 6000, uint256S("0x00000000044eeeed0132a7cf3aebf6b3e210af8ce55a82e553ffa3da3abe2279")),
+            1536155749, // * UNIX timestamp of last checkpoint block
             0,          // * total number of transactions between genesis and last checkpoint
                         //   (the tx=... number in the SetBestChain debug.log lines)
             2800        // * estimated number of transactions per day after checkpoint
@@ -225,11 +225,6 @@ public:
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x0000066e1a274020f32483aa6be7826af3e73dc62b87e53eb74bf28afed51802"));
         assert(genesis.hashMerkleRoot == uint256S("0x3ae2f06e6b2140ad09d698a77e282b1702552f17c93a92702cc2ed05abaa26d2"));
-
-        vFixedSeeds.clear();
-        vSeeds.clear();
-        //vSeeds.push_back(CDNSSeedData("allcoin.guru", "testnet.dnsseed.allcoin.guru"));
-
 
         // Testnet MIA addresses start with 'y'
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,140);
@@ -346,7 +341,8 @@ public:
 
         checkpointData = (CCheckpointData){
             boost::assign::map_list_of
-            ( 0, uint256S("0x20c22c596ece808dcf1c8bf9d46539bee514689a213817e8233b3635f8b4feb7")),
+            //( 0, uint256S("0x20c22c596ece808dcf1c8bf9d46539bee514689a213817e8233b3635f8b4feb7")),
+            ( 0, uint256S("0x0af6b72c27c2846997eac4d613bc157cdf3f5279251d483909a9d5b159f56ed7")),
             0,
             0,
             0
