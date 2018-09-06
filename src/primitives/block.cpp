@@ -15,8 +15,10 @@
 uint256 CBlockHeader::GetHash() const
 {
     if(nTime <= PHI2_TIMESTAMP) {
+      LogPrint("Algo", "Active Xevan\n");
       return XEVAN(BEGIN(nVersion), END(nNonce));
     } else {
+      LogPrint("Algo", "Active PHI2\n");
       return phi2_hash(BEGIN(nVersion), END(nNonce));
     }
 }
