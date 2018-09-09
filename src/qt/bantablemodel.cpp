@@ -8,6 +8,7 @@
 #include "guiconstants.h"
 #include "guiutil.h"
 
+#include "net.h"
 #include "sync.h"
 #include "utiltime.h"
 
@@ -24,15 +25,14 @@ bool BannedNodeLessThan::operator()(const CCombinedBan& left, const CCombinedBan
 
     switch(column)
     {
-    case BanTableModel::Address:
-        return pLeft->subnet.ToString().compare(pRight->subnet.ToString()) < 0;
-    case BanTableModel::Bantime:
-        return pLeft->banEntry.nBanUntil < pRight->banEntry.nBanUntil;
+        case BanTableModel::Address:
+            return pLeft->subnet.ToString().compare(pRight->subnet.ToString()) < 0;
+        case BanTableModel::Bantime:
+            return pLeft->banEntry.nBanUntil < pRight->banEntry.nBanUntil;
     }
 
     return false;
 }
-
 // private implementation
 class BanTablePriv
 {
@@ -48,8 +48,7 @@ public:
     void refreshBanlist()
     {
         banmap_t banMap;
-        if(g_connman)
-            g_connman->GetBanned(banMap);
+        CNode::GetBanned(banMap);
 
         cachedBanlist.clear();
 #if QT_VERSION >= 0x040700
@@ -167,9 +166,9 @@ QModelIndex BanTableModel::index(int row, int column, const QModelIndex &parent)
 
 void BanTableModel::refresh()
 {
-    Q_EMIT layoutAboutToBeChanged();
+    emit layoutAboutToBeChanged();
     priv->refreshBanlist();
-    Q_EMIT layoutChanged();
+    emit layoutChanged();
 }
 
 void BanTableModel::sort(int column, Qt::SortOrder order)

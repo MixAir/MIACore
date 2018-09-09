@@ -1,84 +1,155 @@
+# -*- makefile-gmake -*-
+
 bin_PROGRAMS += qt/mia-qt
 EXTRA_LIBRARIES += qt/libbitcoinqt.a
 
+if ENABLE_UPDATER
+if !TARGET_WINDOWS
+CXXFLAGS += -fPIC -Wno-unused-result -Wno-unused-but-set-variable
+
+LIBS += -lutil
+endif
+endif
+
+
 # mia qt core #
 QT_TS = \
-  qt/locale/mia_bg.ts \
+  qt/locale/mia_ca.ts \
+  qt/locale/mia_da.ts \
   qt/locale/mia_de.ts \
   qt/locale/mia_en.ts \
+  qt/locale/mia_en_US.ts \
   qt/locale/mia_es.ts \
-  qt/locale/mia_fi.ts \
-  qt/locale/mia_fr.ts \
+  qt/locale/mia_fr_FR.ts \
   qt/locale/mia_it.ts \
   qt/locale/mia_ja.ts \
-  qt/locale/mia_pl.ts \
   qt/locale/mia_pt.ts \
+  qt/locale/mia_ro_RO.ts \
   qt/locale/mia_ru.ts \
-  qt/locale/mia_sk.ts \
-  qt/locale/mia_sv.ts \
-  qt/locale/mia_vi.ts \
-  qt/locale/mia_zh_CN.ts \
   qt/locale/mia_zh_TW.ts
 
 QT_FORMS_UI = \
   qt/forms/addressbookpage.ui \
+  qt/forms/addtokenpage.ui \
   qt/forms/askpassphrasedialog.ui \
+  qt/forms/callcontract.ui \
+  qt/forms/bip38tooldialog.ui \
   qt/forms/coincontroldialog.ui \
+  qt/forms/contractbookpage.ui \
+  qt/forms/contractresult.ui \
+  qt/forms/createcontract.ui \
+  qt/forms/blockexplorer.ui \
   qt/forms/darksendconfig.ui \
   qt/forms/editaddressdialog.ui \
+  qt/forms/editcontractinfodialog.ui \
   qt/forms/helpmessagedialog.ui \
   qt/forms/intro.ui \
-  qt/forms/modaloverlay.ui \
-  qt/forms/masternodelist.ui \
+  qt/forms/eula.ui \
+  qt/forms/masternodemanager.ui \
+  qt/forms/addeditmianode.ui \
+  qt/forms/lsrtoken.ui \
+  qt/forms/mianodeconfigdialog.ui \
+  qt/forms/multisenddialog.ui \
   qt/forms/openuridialog.ui \
   qt/forms/optionsdialog.ui \
   qt/forms/overviewpage.ui \
+  qt/forms/tradingdialog.ui \
   qt/forms/receivecoinsdialog.ui \
+  qt/forms/receivetokenpage.ui \
   qt/forms/receiverequestdialog.ui \
-  qt/forms/debugwindow.ui \
+  qt/forms/restoredialog.ui \
+  qt/forms/rpcconsole.ui \
   qt/forms/sendcoinsdialog.ui \
+  qt/forms/sendtokenpage.ui \
   qt/forms/sendcoinsentry.ui \
+  qt/forms/sendtocontract.ui \
   qt/forms/signverifymessagedialog.ui \
-  qt/forms/transactiondescdialog.ui
+  qt/forms/smartcontract.ui \
+  qt/forms/tokendescdialog.ui \
+  qt/forms/transactiondescdialog.ui \
+  qt/forms/hexaddressconverter.ui
+
+if ENABLE_UPDATER
+ QT_FORMS_UI += mia-installer/src/forms/updateinfodialog.ui \
+                mia-installer/src/forms/progressdialog.ui 
+endif
 
 QT_MOC_CPP = \
+  qt/moc_abifunctionfield.cpp \
+  qt/moc_abiparam.cpp \
+  qt/moc_abiparamitem.cpp \
+  qt/moc_abiparamsfield.cpp \
   qt/moc_addressbookpage.cpp \
+  qt/moc_addressfield.cpp \
+  qt/moc_qvalidatedtextedit.cpp \
+  qt/moc_qvalidatedlineedit.cpp \
+  qt/moc_createcontract.cpp \
   qt/moc_addresstablemodel.cpp \
+  qt/moc_addtokenpage.cpp \
   qt/moc_askpassphrasedialog.cpp \
   qt/moc_bantablemodel.cpp \
+  qt/moc_bip38tooldialog.cpp \
   qt/moc_bitcoinaddressvalidator.cpp \
   qt/moc_bitcoinamountfield.cpp \
   qt/moc_bitcoingui.cpp \
   qt/moc_bitcoinunits.cpp \
+  qt/moc_callcontract.cpp \
+  qt/moc_blockexplorer.cpp \
   qt/moc_clientmodel.cpp \
   qt/moc_coincontroldialog.cpp \
   qt/moc_coincontroltreewidget.cpp \
+  qt/moc_contractbookpage.cpp \
+  qt/moc_contractresult.cpp \
+  qt/moc_contracttablemodel.cpp \
+  qt/moc_createcontract.cpp \
   qt/moc_csvmodelwriter.cpp \
   qt/moc_darksendconfig.cpp \
   qt/moc_editaddressdialog.cpp \
+  qt/moc_editcontractinfodialog.cpp \
   qt/moc_guiutil.cpp \
   qt/moc_intro.cpp \
+  qt/moc_eula.cpp \
   qt/moc_macdockiconhandler.cpp \
   qt/moc_macnotificationhandler.cpp \
-  qt/moc_modaloverlay.cpp \
-  qt/moc_masternodelist.cpp \
+  qt/moc_masternodemanager.cpp \
+  qt/moc_addeditmianode.cpp \
+  qt/moc_mianodeconfigdialog.cpp \
+  qt/moc_multisenddialog.cpp \
   qt/moc_notificator.cpp \
   qt/moc_openuridialog.cpp \
   qt/moc_optionsdialog.cpp \
   qt/moc_optionsmodel.cpp \
   qt/moc_overviewpage.cpp \
+  qt/moc_tradingdialog.cpp \
+  qt/moc_tokenamountfield.cpp \
+  qt/moc_qcustomplot.cpp \
   qt/moc_peertablemodel.cpp \
   qt/moc_paymentserver.cpp \
+  qt/moc_lsrtoken.cpp \
   qt/moc_qvalidatedlineedit.cpp \
+  qt/moc_qvalidatedtextedit.cpp \
   qt/moc_qvaluecombobox.cpp \
   qt/moc_receivecoinsdialog.cpp \
   qt/moc_receiverequestdialog.cpp \
+  qt/moc_receivetokenpage.cpp \
   qt/moc_recentrequeststablemodel.cpp \
+  qt/moc_restoredialog.cpp \
   qt/moc_rpcconsole.cpp \
   qt/moc_sendcoinsdialog.cpp \
   qt/moc_sendcoinsentry.cpp \
+  qt/moc_sendtocontract.cpp \
+  qt/moc_sendtokenpage.cpp \
   qt/moc_signverifymessagedialog.cpp \
+  qt/moc_smartcontract.cpp \
   qt/moc_splashscreen.cpp \
+  qt/moc_tabbarinfo.cpp \
+  qt/moc_tokenamountfield.cpp \
+  qt/moc_tokendescdialog.cpp \
+  qt/moc_tokenitemmodel.cpp \
+  qt/moc_tokenfilterproxy.cpp \
+  qt/moc_tokentransactionview.cpp \
+  qt/moc_tokentransactiontablemodel.cpp \
+  qt/moc_tokentransactiondesc.cpp \
   qt/moc_trafficgraphwidget.cpp \
   qt/moc_transactiondesc.cpp \
   qt/moc_transactiondescdialog.cpp \
@@ -88,7 +159,18 @@ QT_MOC_CPP = \
   qt/moc_utilitydialog.cpp \
   qt/moc_walletframe.cpp \
   qt/moc_walletmodel.cpp \
-  qt/moc_walletview.cpp
+  qt/moc_walletview.cpp \
+  qt/moc_hexaddressconverter.cpp
+
+if ENABLE_UPDATER
+  QT_MOC_CPP += mia-installer/src/miaupdater/moc_miaupdater.cpp \
+                mia-installer/src/miaupdater/moc_simplescheduler_p.cpp \
+                mia-installer/src/miaupdater/moc_atomfeeder.cpp \
+                mia-installer/src/miaupdater/moc_downloadmanager.cpp \
+                mia-installer/src/moc_progressdialog_p.cpp \
+                mia-installer/src/moc_updatecontroller.cpp \
+                mia-installer/src/moc_updateinfodialog_p.cpp
+endif
 
 BITCOIN_MM = \
   qt/macdockiconhandler.mm \
@@ -98,6 +180,9 @@ QT_MOC = \
   qt/mia.moc \
   qt/bitcoinamountfield.moc \
   qt/intro.moc \
+  qt/eula.moc \
+  qt/tokenamountfield.moc \
+  qt/tokenitemmodel.moc \
   qt/overviewpage.moc \
   qt/rpcconsole.moc
 
@@ -111,48 +196,88 @@ PROTOBUF_H = qt/paymentrequest.pb.h
 PROTOBUF_PROTO = qt/paymentrequest.proto
 
 BITCOIN_QT_H = \
+  qt/abifunctionfield.h \
+  qt/abiparam.h \
+  qt/abiparamitem.h \
+  qt/abiparamsfield.h \
   qt/addressbookpage.h \
+  qt/addressfield.h \
+  qt/qvalidatedtextedit.h \
+  qt/qvalidatedlineedit.h \
+  qt/createcontract.h \
   qt/addresstablemodel.h \
+  qt/addtokenpage.h \
   qt/askpassphrasedialog.h \
   qt/bantablemodel.h \
+  qt/bip38tooldialog.h \
   qt/bitcoinaddressvalidator.h \
   qt/bitcoinamountfield.h \
   qt/bitcoingui.h \
   qt/bitcoinunits.h \
+  qt/blockexplorer.h \
   qt/clientmodel.h \
+  qt/callcontract.h \
   qt/coincontroldialog.h \
   qt/coincontroltreewidget.h \
+  qt/contractabi.h \
+  qt/contractbookpage.h \
+  qt/contractresult.h \
+  qt/contracttablemodel.h \
+  qt/createcontract.h \
   qt/csvmodelwriter.h \
+  qt/customlist.h \
   qt/darksendconfig.h \
   qt/editaddressdialog.h \
+  qt/editcontractinfodialog.h \
+  qt/execrpccommand.h \
+  qt/eventlog.h \
   qt/guiconstants.h \
   qt/guiutil.h \
   qt/intro.h \
+  qt/eula.h \
   qt/macdockiconhandler.h \
   qt/macnotificationhandler.h \
-  qt/modaloverlay.h \
-  qt/masternodelist.h \
+  qt/masternodemanager.h \
+  qt/addeditmianode.h \
+  qt/mianodeconfigdialog.h \
+  qt/multisenddialog.h \
   qt/networkstyle.h \
   qt/notificator.h \
   qt/openuridialog.h \
   qt/optionsdialog.h \
   qt/optionsmodel.h \
   qt/overviewpage.h \
+  qt/tradingdialog.h \
   qt/paymentrequestplus.h \
   qt/paymentserver.h \
   qt/peertablemodel.h \
   qt/platformstyle.h \
+  qt/lsrtoken.h \
   qt/qvalidatedlineedit.h \
+  qt/qvalidatedtextedit.h \
   qt/qvaluecombobox.h \
   qt/receivecoinsdialog.h \
   qt/receiverequestdialog.h \
   qt/recentrequeststablemodel.h \
+  qt/restoredialog.h \
   qt/rpcconsole.h \
   qt/sendcoinsdialog.h \
   qt/sendcoinsentry.h \
+  qt/sendtocontract.h \
   qt/signverifymessagedialog.h \
+  qt/smartcontract.h \
   qt/splashscreen.h \
   qt/trafficgraphdata.h \
+  qt/tabbarinfo.h \
+  qt/token.h \
+  qt/tokenamountfield.h \
+  qt/tokendescdialog.h \
+  qt/tokenitemmodel.h \
+  qt/tokenfilterproxy.h \
+  qt/tokentransactionview.h \
+  qt/tokentransactionrecord.h \
+  qt/tokentransactiontablemodel.h \
+  qt/tokentransactiondesc.h \
   qt/trafficgraphwidget.h \
   qt/transactiondesc.h \
   qt/transactiondescdialog.h \
@@ -165,229 +290,86 @@ BITCOIN_QT_H = \
   qt/walletmodel.h \
   qt/walletmodeltransaction.h \
   qt/walletview.h \
-  qt/winshutdownmonitor.h
+  qt/winshutdownmonitor.h \
+  qt/qcustomplot.h \
+  qt/hexaddressconverter.h
+
+if ENABLE_UPDATER
+  BITCOIN_QT_H += mia-installer/src/miaupdater/miaupdater.h \
+                  mia-installer/src/miaupdater/simplescheduler_p.h \
+                  mia-installer/src/miaupdater/atomfeeder.h \
+                  mia-installer/src/miaupdater/downloadmanager.h \
+                  mia-installer/src/progressdialog_p.h \
+                  mia-installer/src/updatecontroller.h \
+                  mia-installer/src/updateinfodialog_p.h
+endif
+
 
 RES_ICONS = \
+  qt/res/icons/add.png \
+  qt/res/icons/address-book.png \
   qt/res/icons/bitcoin.ico \
   qt/res/icons/bitcoin.png \
+  qt/res/icons/bitcoin_testnet.ico \
+  qt/res/icons/bitcoin_testnet.png \
+  qt/res/icons/browse.png \
   qt/res/icons/chevron.png \
-  qt/res/icons/warning.png \
-  qt/res/icons/drkblue/add.png \
-  qt/res/icons/drkblue/address-book.png \
-  qt/res/icons/drkblue/browse.png \
-  qt/res/icons/drkblue/clock1.png \
-  qt/res/icons/drkblue/clock2.png \
-  qt/res/icons/drkblue/clock3.png \
-  qt/res/icons/drkblue/clock4.png \
-  qt/res/icons/drkblue/clock5.png \
-  qt/res/icons/drkblue/configure.png \
-  qt/res/icons/drkblue/connect0_16.png \
-  qt/res/icons/drkblue/connect1_16.png \
-  qt/res/icons/drkblue/connect2_16.png \
-  qt/res/icons/drkblue/connect3_16.png \
-  qt/res/icons/drkblue/connect4_16.png \
-  qt/res/icons/drkblue/debugwindow.png \
-  qt/res/icons/drkblue/drkblue_editpaste.png \
-  qt/res/icons/drkblue/drkblue_address-book.png \
-  qt/res/icons/drkblue/drkblue_editcopy.png \
-  qt/res/icons/drkblue/drkblue_remove.png \
-  qt/res/icons/drkblue/edit.png \
-  qt/res/icons/drkblue/editcopy.png \
-  qt/res/icons/drkblue/editpaste.png \
-  qt/res/icons/drkblue/export.png \
-  qt/res/icons/drkblue/eye.png \
-  qt/res/icons/drkblue/eye_minus.png \
-  qt/res/icons/drkblue/eye_plus.png \
-  qt/res/icons/drkblue/filesave.png \
-  qt/res/icons/drkblue/hd_disabled.png \
-  qt/res/icons/drkblue/hd_enabled.png \
-  qt/res/icons/drkblue/history.png \
-  qt/res/icons/drkblue/key.png \
-  qt/res/icons/drkblue/lock_closed.png \
-  qt/res/icons/drkblue/lock_open.png \
-  qt/res/icons/drkblue/masternodes.png \
-  qt/res/icons/drkblue/overview.png \
-  qt/res/icons/drkblue/quit.png \
-  qt/res/icons/drkblue/receive.png \
-  qt/res/icons/drkblue/remove.png \
-  qt/res/icons/drkblue/send.png \
-  qt/res/icons/drkblue/synced.png \
-  qt/res/icons/drkblue/transaction0.png \
-  qt/res/icons/drkblue/transaction2.png \
-  qt/res/icons/drkblue/transaction_conflicted.png \
-  qt/res/icons/drkblue/tx_inout.png \
-  qt/res/icons/drkblue/tx_input.png \
-  qt/res/icons/drkblue/tx_output.png \
-  qt/res/icons/drkblue/tx_mined.png \
-  qt/res/icons/drkblue/about.png \
-  qt/res/icons/drkblue/about_qt.png \
-  qt/res/icons/drkblue/verify.png \
-  qt/res/icons/drkblue/fontbigger.png \
-  qt/res/icons/drkblue/fontsmaller.png \
-  qt/res/icons/drkblue/transaction_abandoned.png \
-  qt/res/icons/drkblue/network_disabled.png \
-  qt/res/icons/crownium/add.png \
-  qt/res/icons/crownium/address-book.png \
-  qt/res/icons/crownium/browse.png \
-  qt/res/icons/crownium/clock1.png \
-  qt/res/icons/crownium/clock2.png \
-  qt/res/icons/crownium/clock3.png \
-  qt/res/icons/crownium/clock4.png \
-  qt/res/icons/crownium/clock5.png \
-  qt/res/icons/crownium/configure.png \
-  qt/res/icons/crownium/connect0_16.png \
-  qt/res/icons/crownium/connect1_16.png \
-  qt/res/icons/crownium/connect2_16.png \
-  qt/res/icons/crownium/connect3_16.png \
-  qt/res/icons/crownium/connect4_16.png \
-  qt/res/icons/crownium/debugwindow.png \
-  qt/res/icons/crownium/drkblue_editpaste.png \
-  qt/res/icons/crownium/drkblue_address-book.png \
-  qt/res/icons/crownium/drkblue_editcopy.png \
-  qt/res/icons/crownium/drkblue_remove.png \
-  qt/res/icons/crownium/edit.png \
-  qt/res/icons/crownium/editcopy.png \
-  qt/res/icons/crownium/editpaste.png \
-  qt/res/icons/crownium/export.png \
-  qt/res/icons/crownium/eye.png \
-  qt/res/icons/crownium/eye_minus.png \
-  qt/res/icons/crownium/eye_plus.png \
-  qt/res/icons/crownium/filesave.png \
-  qt/res/icons/crownium/hd_disabled.png \
-  qt/res/icons/crownium/hd_enabled.png \
-  qt/res/icons/crownium/history.png \
-  qt/res/icons/crownium/key.png \
-  qt/res/icons/crownium/lock_closed.png \
-  qt/res/icons/crownium/lock_open.png \
-  qt/res/icons/crownium/masternodes.png \
-  qt/res/icons/crownium/overview.png \
-  qt/res/icons/crownium/quit.png \
-  qt/res/icons/crownium/receive.png \
-  qt/res/icons/crownium/remove.png \
-  qt/res/icons/crownium/send.png \
-  qt/res/icons/crownium/synced.png \
-  qt/res/icons/crownium/transaction0.png \
-  qt/res/icons/crownium/transaction2.png \
-  qt/res/icons/crownium/transaction_conflicted.png \
-  qt/res/icons/crownium/tx_inout.png \
-  qt/res/icons/crownium/tx_input.png \
-  qt/res/icons/crownium/tx_output.png \
-  qt/res/icons/crownium/tx_mined.png \
-  qt/res/icons/crownium/about.png \
-  qt/res/icons/crownium/about_qt.png \
-  qt/res/icons/crownium/verify.png \
-  qt/res/icons/crownium/fontbigger.png \
-  qt/res/icons/crownium/fontsmaller.png \
-  qt/res/icons/crownium/transaction_abandoned.png \
-  qt/res/icons/crownium/network_disabled.png \
-  qt/res/icons/light/add.png \
-  qt/res/icons/light/address-book.png \
-  qt/res/icons/light/browse.png \
-  qt/res/icons/light/clock1.png \
-  qt/res/icons/light/clock2.png \
-  qt/res/icons/light/clock3.png \
-  qt/res/icons/light/clock4.png \
-  qt/res/icons/light/clock5.png \
-  qt/res/icons/light/configure.png \
-  qt/res/icons/light/connect0_16.png \
-  qt/res/icons/light/connect1_16.png \
-  qt/res/icons/light/connect2_16.png \
-  qt/res/icons/light/connect3_16.png \
-  qt/res/icons/light/connect4_16.png \
-  qt/res/icons/light/debugwindow.png \
-  qt/res/icons/light/drkblue_editpaste.png \
-  qt/res/icons/light/drkblue_address-book.png \
-  qt/res/icons/light/drkblue_editcopy.png \
-  qt/res/icons/light/drkblue_remove.png \
-  qt/res/icons/light/edit.png \
-  qt/res/icons/light/editcopy.png \
-  qt/res/icons/light/editpaste.png \
-  qt/res/icons/light/export.png \
-  qt/res/icons/light/eye.png \
-  qt/res/icons/light/eye_minus.png \
-  qt/res/icons/light/eye_plus.png \
-  qt/res/icons/light/filesave.png \
-  qt/res/icons/light/hd_disabled.png \
-  qt/res/icons/light/hd_enabled.png \
-  qt/res/icons/light/history.png \
-  qt/res/icons/light/key.png \
-  qt/res/icons/light/lock_closed.png \
-  qt/res/icons/light/lock_open.png \
-  qt/res/icons/light/masternodes.png \
-  qt/res/icons/light/overview.png \
-  qt/res/icons/light/quit.png \
-  qt/res/icons/light/receive.png \
-  qt/res/icons/light/remove.png \
-  qt/res/icons/light/send.png \
-  qt/res/icons/light/synced.png \
-  qt/res/icons/light/transaction0.png \
-  qt/res/icons/light/transaction2.png \
-  qt/res/icons/light/transaction_conflicted.png \
-  qt/res/icons/light/tx_inout.png \
-  qt/res/icons/light/tx_input.png \
-  qt/res/icons/light/tx_output.png \
-  qt/res/icons/light/tx_mined.png \
-  qt/res/icons/light/about.png \
-  qt/res/icons/light/about_qt.png \
-  qt/res/icons/light/verify.png \
-  qt/res/icons/light/fontbigger.png \
-  qt/res/icons/light/fontsmaller.png \
-  qt/res/icons/light/transaction_abandoned.png \
-  qt/res/icons/light/network_disabled.png \
-  qt/res/icons/trad/add.png \
-  qt/res/icons/trad/address-book.png \
-  qt/res/icons/trad/browse.png \
-  qt/res/icons/trad/clock1.png \
-  qt/res/icons/trad/clock2.png \
-  qt/res/icons/trad/clock3.png \
-  qt/res/icons/trad/clock4.png \
-  qt/res/icons/trad/clock5.png \
-  qt/res/icons/trad/configure.png \
-  qt/res/icons/trad/connect0_16.png \
-  qt/res/icons/trad/connect1_16.png \
-  qt/res/icons/trad/connect2_16.png \
-  qt/res/icons/trad/connect3_16.png \
-  qt/res/icons/trad/connect4_16.png \
-  qt/res/icons/trad/debugwindow.png \
-  qt/res/icons/trad/drkblue_editpaste.png \
-  qt/res/icons/trad/drkblue_address-book.png \
-  qt/res/icons/trad/drkblue_editcopy.png \
-  qt/res/icons/trad/drkblue_remove.png \
-  qt/res/icons/trad/edit.png \
-  qt/res/icons/trad/editcopy.png \
-  qt/res/icons/trad/editpaste.png \
-  qt/res/icons/trad/export.png \
-  qt/res/icons/trad/eye.png \
-  qt/res/icons/trad/eye_minus.png \
-  qt/res/icons/trad/eye_plus.png \
-  qt/res/icons/trad/filesave.png \
-  qt/res/icons/trad/hd_disabled.png \
-  qt/res/icons/trad/hd_enabled.png \
-  qt/res/icons/trad/history.png \
-  qt/res/icons/trad/key.png \
-  qt/res/icons/trad/lock_closed.png \
-  qt/res/icons/trad/lock_open.png \
-  qt/res/icons/trad/masternodes.png \
-  qt/res/icons/trad/overview.png \
-  qt/res/icons/trad/quit.png \
-  qt/res/icons/trad/receive.png \
-  qt/res/icons/trad/remove.png \
-  qt/res/icons/trad/send.png \
-  qt/res/icons/trad/synced.png \
-  qt/res/icons/trad/transaction0.png \
-  qt/res/icons/trad/transaction2.png \
-  qt/res/icons/trad/transaction_conflicted.png \
-  qt/res/icons/trad/tx_inout.png \
-  qt/res/icons/trad/tx_input.png \
-  qt/res/icons/trad/tx_output.png \
-  qt/res/icons/trad/tx_mined.png \
-  qt/res/icons/trad/about.png \
-  qt/res/icons/trad/about_qt.png \
-  qt/res/icons/trad/verify.png \
-  qt/res/icons/trad/fontbigger.png \
-  qt/res/icons/trad/fontsmaller.png \
-  qt/res/icons/trad/transaction_abandoned.png \
-  qt/res/icons/trad/network_disabled.png
+  qt/res/icons/clock1.png \
+  qt/res/icons/clock2.png \
+  qt/res/icons/clock3.png \
+  qt/res/icons/clock4.png \
+  qt/res/icons/clock5.png \
+  qt/res/icons/configure.png \
+  qt/res/icons/connect0_16.png \
+  qt/res/icons/connect1_16.png \
+  qt/res/icons/connect2_16.png \
+  qt/res/icons/connect3_16.png \
+  qt/res/icons/connect4_16.png \
+  qt/res/icons/debugwindow.png \
+  qt/res/icons/edit.png \
+  qt/res/icons/editcopy.png \
+  qt/res/icons/editpaste.png \
+  qt/res/icons/explorer.png \
+  qt/res/icons/export.png \
+  qt/res/icons/eye.png \
+  qt/res/icons/eye_minus.png \
+  qt/res/icons/eye_plus.png \
+  qt/res/icons/filesave.png \
+  qt/res/icons/fontbigger.png \
+  qt/res/icons/fontsmaller.png \
+  qt/res/icons/history.png \
+  qt/res/icons/key.png \
+  qt/res/icons/lock_closed.png \
+  qt/res/icons/update.ico \
+  qt/res/icons/miaupdate-loader.gif \
+  qt/res/icons/lock_open.png \
+  qt/res/icons/masternodes.png \
+  qt/res/icons/overview.png \
+  qt/res/icons/smartcontract.png \
+  qt/res/icons/qrcode.png \
+  qt/res/icons/lsrtoken.png \
+  qt/res/icons/quit.png \
+  qt/res/icons/receive.png \
+  qt/res/icons/remove.png \
+  qt/res/icons/send.png \
+  qt/res/icons/staking_active.png \
+  qt/res/icons/staking_inactive.png \
+  qt/res/icons/synced.png \
+  qt/res/icons/stake.png \
+  qt/res/icons/trade.png \
+  qt/res/icons/transaction0.png \
+  qt/res/icons/transaction2.png \
+  qt/res/icons/transaction_conflicted.png \
+  qt/res/icons/tx_inout.png \
+  qt/res/icons/tx_input.png \
+  qt/res/icons/tx_output.png \
+  qt/res/icons/tx_mined.png \
+  qt/res/icons/unit_mia.png \
+  qt/res/icons/unit_mmia.png \
+  qt/res/icons/unit_umia.png \
+  qt/res/icons/unit_tmia.png \
+  qt/res/icons/unit_tmmia.png \
+  qt/res/icons/unit_tumia.png
 
 BITCOIN_QT_CPP = \
   qt/bantablemodel.cpp \
@@ -395,49 +377,93 @@ BITCOIN_QT_CPP = \
   qt/bitcoinamountfield.cpp \
   qt/bitcoingui.cpp \
   qt/bitcoinunits.cpp \
+  qt/blockexplorer.cpp \
   qt/clientmodel.cpp \
   qt/csvmodelwriter.cpp \
   qt/guiutil.cpp \
   qt/intro.cpp \
-  qt/modaloverlay.cpp \
+  qt/eula.cpp \
+  qt/masternodemanager.cpp \
+  qt/addeditmianode.cpp \
+  qt/mianodeconfigdialog.cpp \
   qt/networkstyle.cpp \
+  qt/token.cpp \
   qt/notificator.cpp \
   qt/optionsdialog.cpp \
   qt/optionsmodel.cpp \
   qt/peertablemodel.cpp \
   qt/platformstyle.cpp \
   qt/qvalidatedlineedit.cpp \
+  qt/qvalidatedtextedit.cpp \
   qt/qvaluecombobox.cpp \
   qt/rpcconsole.cpp \
   qt/splashscreen.cpp \
   qt/trafficgraphdata.cpp \
+  qt/tabbarinfo.cpp \
+  qt/tokenitemmodel.cpp \
+  qt/tokenamountfield.cpp \
   qt/trafficgraphwidget.cpp \
-  qt/utilitydialog.cpp
-
-if TARGET_WINDOWS
-BITCOIN_QT_CPP += qt/winshutdownmonitor.cpp
-endif
+  qt/utilitydialog.cpp \
+  qt/winshutdownmonitor.cpp \
+  qt/hexaddressconverter.cpp
 
 if ENABLE_WALLET
 BITCOIN_QT_CPP += \
+  qt/abifunctionfield.cpp \
+  qt/abiparam.cpp \
+  qt/abiparamitem.cpp \
+  qt/abiparamsfield.cpp \
   qt/addressbookpage.cpp \
+  qt/addressfield.cpp \
+  qt/qvalidatedtextedit.cpp \
+  qt/qvalidatedlineedit.cpp \
+  qt/createcontract.cpp \
   qt/addresstablemodel.cpp \
+  qt/addtokenpage.cpp \
   qt/askpassphrasedialog.cpp \
+  qt/bip38tooldialog.cpp \
+  qt/blockexplorer.cpp \
+  qt/callcontract.cpp \
   qt/coincontroldialog.cpp \
   qt/coincontroltreewidget.cpp \
+  qt/contractabi.cpp \
+  qt/contractbookpage.cpp \
+  qt/contractresult.cpp \
+  qt/contracttablemodel.cpp \
+  qt/createcontract.cpp \
   qt/darksendconfig.cpp \
   qt/editaddressdialog.cpp \
-  qt/masternodelist.cpp \
+  qt/execrpccommand.cpp \
+  qt/editcontractinfodialog.cpp \
+  qt/eventlog.cpp \
+  qt/masternodemanager.cpp \
+  qt/addeditmianode.cpp \
+  qt/mianodeconfigdialog.cpp \
+  qt/multisenddialog.cpp \
   qt/openuridialog.cpp \
   qt/overviewpage.cpp \
+  qt/qcustomplot.cpp \
+  qt/tradingdialog.cpp \
   qt/paymentrequestplus.cpp \
   qt/paymentserver.cpp \
+  qt/lsrtoken.cpp \
   qt/receivecoinsdialog.cpp \
   qt/receiverequestdialog.cpp \
+  qt/receivetokenpage.cpp \
   qt/recentrequeststablemodel.cpp \
+  qt/restoredialog.cpp \
   qt/sendcoinsdialog.cpp \
   qt/sendcoinsentry.cpp \
+  qt/sendtocontract.cpp \
+  qt/sendtokenpage.cpp \
   qt/signverifymessagedialog.cpp \
+  qt/smartcontract.cpp \
+  qt/tokendescdialog.cpp \
+  qt/tokenfilterproxy.cpp \
+  qt/tokentransactionview.cpp \
+  qt/tokentransactionrecord.cpp \
+  qt/tokentransactiontablemodel.cpp \
+  qt/tokentransactiondesc.cpp \
   qt/transactiondesc.cpp \
   qt/transactiondescdialog.cpp \
   qt/transactionfilterproxy.cpp \
@@ -448,76 +474,54 @@ BITCOIN_QT_CPP += \
   qt/walletmodel.cpp \
   qt/walletmodeltransaction.cpp \
   qt/walletview.cpp
+
+if ENABLE_UPDATER
+  BITCOIN_QT_CPP += mia-installer/src/miaupdater/simplescheduler.cpp \
+                    mia-installer/src/miaupdater/miaupdater_p.cpp \
+                    mia-installer/src/miaupdater/miaupdater.cpp \
+                    mia-installer/src/miaupdater/atomfeeder.cpp \
+                    mia-installer/src/miaupdater/downloadmanager.cpp \
+                    mia-installer/src/dialogmaster.cpp \
+                    mia-installer/src/progressdialog.cpp \
+                    mia-installer/src/updatecontroller.cpp \
+                    mia-installer/src/updateinfodialog.cpp
+if TARGET_WINDOWS
+  BITCOIN_QT_CPP += mia-installer/src/adminauthorization_win.cpp
+else
+  BITCOIN_QT_CPP += mia-installer/src/adminauthorization_x11.cpp
+endif
+
+endif
+
 endif
 
 RES_IMAGES = \
-  qt/res/images/drkblue/about.png \
-  qt/res/images/drkblue/splash.png \
-  qt/res/images/drkblue/splash_testnet.png \
-  qt/res/images/drkblue/mia_logo_horizontal.png \
-  qt/res/images/drkblue/unchecked.png \
-  qt/res/images/drkblue/checked.png \
-  qt/res/images/drkblue/drkblue_downArrow.png \
-  qt/res/images/drkblue/drkblue_downArrow_small.png \
-  qt/res/images/drkblue/drkblue_upArrow_small.png \
-  qt/res/images/drkblue/drkblue_leftArrow_small.png \
-  qt/res/images/drkblue/drkblue_rightArrow_small.png \
-  qt/res/images/drkblue/drkblue_qtreeview_selected.png \
-  qt/res/images/drkblue/drkblue_walletFrame_bg.png \
-  qt/res/images/crownium/about.png \
-  qt/res/images/crownium/splash.png \
-  qt/res/images/crownium/splash_testnet.png \
-  qt/res/images/crownium/mia_logo_horizontal.png \
-  qt/res/images/crownium/unchecked.png \
-  qt/res/images/crownium/checked.png \
-  qt/res/images/crownium/drkblue_downArrow.png \
-  qt/res/images/crownium/drkblue_downArrow_small.png \
-  qt/res/images/crownium/drkblue_upArrow_small.png \
-  qt/res/images/crownium/drkblue_leftArrow_small.png \
-  qt/res/images/crownium/drkblue_rightArrow_small.png \
-  qt/res/images/crownium/drkblue_qtreeview_selected.png \
-  qt/res/images/crownium/drkblue_walletFrame_bg.png \
-  qt/res/images/light/about.png \
-  qt/res/images/light/splash.png \
-  qt/res/images/light/splash_testnet.png \
-  qt/res/images/light/mia_logo_horizontal.png \
-  qt/res/images/light/unchecked.png \
-  qt/res/images/light/checked.png \
-  qt/res/images/light/drkblue_downArrow.png \
-  qt/res/images/light/drkblue_downArrow_small.png \
-  qt/res/images/light/drkblue_upArrow_small.png \
-  qt/res/images/light/drkblue_leftArrow_small.png \
-  qt/res/images/light/drkblue_rightArrow_small.png \
-  qt/res/images/light/drkblue_qtreeview_selected.png \
-  qt/res/images/light/drkblue_walletFrame_bg.png \
-  qt/res/images/trad/about.png \
-  qt/res/images/trad/splash.png \
-  qt/res/images/trad/splash_testnet.png \
-  qt/res/images/trad/mia_logo_horizontal.png \
-  qt/res/images/trad/drkblue_downArrow.png \
-  qt/res/images/trad/drkblue_downArrow_small.png \
-  qt/res/images/trad/drkblue_upArrow_small.png \
-  qt/res/images/trad/drkblue_leftArrow_small.png \
-  qt/res/images/trad/drkblue_rightArrow_small.png \
-  qt/res/images/trad/drkblue_qtreeview_selected.png \
-  qt/res/images/trad/drkblue_walletFrame_bg.png
+  qt/res/images/about.png \
+  qt/res/images/splash.png \
+  qt/res/images/splash_testnet.png \
+  qt/res/images/mia_logo_horizontal.png \
+  qt/res/images/downArrow.png \
+  qt/res/images/downArrow_small.png \
+  qt/res/images/upArrow_small.png \
+  qt/res/images/leftArrow_small.png \
+  qt/res/images/rightArrow_small.png \
+  qt/res/images/qtreeview_selected.png \
+  qt/res/images/walletFrame.png \
+  qt/res/images/walletFrame_bg.png \
+  qt/res/images/walletFrame_bg.png
 
 RES_CSS = \
-  qt/res/css/drkblue.css \
-  qt/res/css/crownium.css \
-  qt/res/css/light.css \
-  qt/res/css/light-hires.css
+  qt/res/css/default.css
 
-RES_MOVIES = $(wildcard qt/res/movies/spinner-*.png)
+RES_MOVIES = $(wildcard $(srcdir)/qt/res/movies/spinner-*.png)
 
 BITCOIN_RC = qt/res/mia-qt-res.rc
 
 BITCOIN_QT_INCLUDES = -I$(builddir)/qt -I$(srcdir)/qt -I$(srcdir)/qt/forms \
-  -I$(builddir)/qt/forms -DQT_NO_KEYWORDS
+  -I$(builddir)/qt/forms
 
-qt_libbitcoinqt_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(BITCOIN_QT_INCLUDES) \
+qt_libbitcoinqt_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(BITCOIN_QT_INCLUDES) \
   $(QT_INCLUDES) $(QT_DBUS_INCLUDES) $(PROTOBUF_CFLAGS) $(QR_CFLAGS)
-qt_libbitcoinqt_a_CXXFLAGS = $(AM_CXXFLAGS) $(QT_PIE_FLAGS)
 
 qt_libbitcoinqt_a_SOURCES = $(BITCOIN_QT_CPP) $(BITCOIN_QT_H) $(QT_FORMS_UI) \
   $(QT_QRC) $(QT_QRC_LOCALE) $(QT_TS) $(PROTOBUF_PROTO) $(RES_ICONS) $(RES_IMAGES) $(RES_CSS) $(RES_MOVIES)
@@ -539,9 +543,8 @@ $(QT_MOC): $(PROTOBUF_H)
 $(QT_MOC_CPP): $(PROTOBUF_H)
 
 # mia-qt binary #
-qt_mia_qt_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(BITCOIN_QT_INCLUDES) \
+qt_mia_qt_CPPFLAGS = $(BITCOIN_INCLUDES) $(BITCOIN_QT_INCLUDES) \
   $(QT_INCLUDES) $(PROTOBUF_CFLAGS) $(QR_CFLAGS)
-qt_mia_qt_CXXFLAGS = $(AM_CXXFLAGS) $(QT_PIE_FLAGS)
 
 qt_mia_qt_SOURCES = qt/mia.cpp
 if TARGET_DARWIN
@@ -557,22 +560,23 @@ endif
 if ENABLE_ZMQ
 qt_mia_qt_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
 endif
-qt_mia_qt_LDADD += $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
+qt_mia_qt_LDADD += $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_CONSENSUS) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBBITCOIN_UNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
   $(BOOST_LIBS) $(QT_LIBS) $(QT_DBUS_LIBS) $(QR_LIBS) $(PROTOBUF_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(LIBSECP256K1) \
-  $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS)
+  $(LIBCRYPTOPP) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS)
+
 qt_mia_qt_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(QT_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 qt_mia_qt_LIBTOOLFLAGS = --tag CXX
 
 #locale/foo.ts -> locale/foo.qm
 QT_QM=$(QT_TS:.ts=.qm)
 
-SECONDARY: $(QT_QM)
+.SECONDARY: $(QT_QM)
 
-qt/miastrings.cpp: $(libbitcoin_server_a_SOURCES) $(libbitcoin_wallet_a_SOURCES) $(libbitcoin_common_a_SOURCES) $(libbitcoin_zmq_a_SOURCES) $(libbitcoin_consensus_a_SOURCES) $(libbitcoin_util_a_SOURCES)
+qt/miastrings.cpp: $(libbitcoin_server_a_SOURCES) $(libbitcoin_wallet_a_SOURCES) $(libbitcoin_common_a_SOURCES)
 	@test -n $(XGETTEXT) || echo "xgettext is required for updating translations"
-	$(AM_V_GEN) cd $(srcdir); XGETTEXT=$(XGETTEXT) ../share/qt/extract_strings_qt.py $^
+	$(AM_V_GEN) cd $(srcdir); XGETTEXT=$(XGETTEXT) $(PYTHON) ../share/qt/extract_strings_qt.py $^
 
-translate: qt/miastrings.cpp $(QT_FORMS_UI) $(QT_FORMS_UI) $(BITCOIN_QT_CPP) qt/mia.cpp $(BITCOIN_QT_H) $(BITCOIN_MM)
+translate: qt/miastrings.cpp $(QT_FORMS_UI) $(QT_FORMS_UI) $(BITCOIN_QT_CPP) $(BITCOIN_QT_H) $(BITCOIN_MM)
 	@test -n $(LUPDATE) || echo "lupdate is required for updating translations"
 	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(LUPDATE) $^ -locations relative -no-obsolete -ts qt/locale/mia_en.ts
 
@@ -602,11 +606,11 @@ ui_%.h: %.ui
 	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(UIC) -o $@ $< || (echo "Error creating $@"; false)
 
 %.moc: %.cpp
-	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(MOC) $(DEFAULT_INCLUDES) $(QT_INCLUDES) $(MOC_DEFS) $< | \
+	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(MOC) $(QT_INCLUDES) $(MOC_DEFS) $< | \
 	  $(SED) -e '/^\*\*.*Created:/d' -e '/^\*\*.*by:/d' > $@
 
 moc_%.cpp: %.h
-	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(MOC) $(DEFAULT_INCLUDES) $(QT_INCLUDES) $(MOC_DEFS) $< | \
+	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(MOC) $(QT_INCLUDES) $(MOC_DEFS) $< | \
 	  $(SED) -e '/^\*\*.*Created:/d' -e '/^\*\*.*by:/d' > $@
 
 %.qm: %.ts

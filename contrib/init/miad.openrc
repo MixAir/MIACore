@@ -2,24 +2,22 @@
 
 # backward compatibility for existing gentoo layout
 #
-if [ -d "/var/lib/miacore/.miacore" ]; then
-	BITCOIND_DEFAULT_DATADIR="/var/lib/miacore/.miacore"
+if [ -d "/var/lib/mia/.mia" ]; then
+	BITCOIND_DEFAULT_DATADIR="/var/lib/mia/.mia"
 else
 	BITCOIND_DEFAULT_DATADIR="/var/lib/miad"
 fi
 
-BITCOIND_CONFIGFILE=${BITCOIND_CONFIGFILE:-/etc/miacore/mia.conf}
+BITCOIND_CONFIGFILE=${BITCOIND_CONFIGFILE:-/etc/mia/mia.conf}
 BITCOIND_PIDDIR=${BITCOIND_PIDDIR:-/var/run/miad}
 BITCOIND_PIDFILE=${BITCOIND_PIDFILE:-${BITCOIND_PIDDIR}/miad.pid}
 BITCOIND_DATADIR=${BITCOIND_DATADIR:-${BITCOIND_DEFAULT_DATADIR}}
-BITCOIND_USER=${BITCOIND_USER:-${BITCOIN_USER:-miacore}}
-BITCOIND_GROUP=${BITCOIND_GROUP:-miacore}
+BITCOIND_USER=${BITCOIND_USER:-mia}
+BITCOIND_GROUP=${BITCOIND_GROUP:-mia}
 BITCOIND_BIN=${BITCOIND_BIN:-/usr/bin/miad}
-BITCOIND_NICE=${BITCOIND_NICE:-${NICELEVEL:-0}}
-BITCOIND_OPTS="${BITCOIND_OPTS:-${BITCOIN_OPTS}}"
 
-name="MIA Core Daemon"
-description="MIA cryptocurrency P2P network daemon"
+name="Luxcore Daemon"
+description="MIA crypto-currency p2p network daemon"
 
 command="/usr/bin/miad"
 command_args="-pid=\"${BITCOIND_PIDFILE}\" \
@@ -30,13 +28,9 @@ command_args="-pid=\"${BITCOIND_PIDFILE}\" \
 
 required_files="${BITCOIND_CONFIGFILE}"
 start_stop_daemon_args="-u ${BITCOIND_USER} \
-			-N ${BITCOIND_NICE} -w 2000"
+			-N ${BITCOIND_NICE:-0} -w 2000"
 pidfile="${BITCOIND_PIDFILE}"
-
-# The retry schedule to use when stopping the daemon. Could be either
-# a timeout in seconds or multiple signal/timeout pairs (like
-# "SIGKILL/180 SIGTERM/300")
-retry="${BITCOIND_SIGTERM_TIMEOUT}"
+retry=60
 
 depend() {
 	need localmount net
@@ -84,8 +78,8 @@ checkconfig()
 		eerror "It is also recommended that you also set alertnotify so you are "
 		eerror "notified of problems:"
 		eerror ""
-		eerror "ie: alertnotify=echo %%s | mail -s \"MIA Core Alert\"" \
-			"admin@mixair.info"
+		eerror "ie: alertnotify=echo %%s | mail -s \"Lux Alert\"" \
+			"admin@foo.com"
 		eerror ""
 		return 1
 	fi

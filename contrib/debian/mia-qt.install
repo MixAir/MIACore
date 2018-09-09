@@ -1,6 +1,6 @@
 usr/local/bin/mia-qt usr/bin
-share/pixmaps/mia32.xpm usr/share/pixmaps
-share/pixmaps/mia16.xpm usr/share/pixmaps
-share/pixmaps/mia128.png usr/share/pixmaps
+share/pixmaps/bitcoin32.xpm usr/share/pixmaps
+share/pixmaps/bitcoin16.xpm usr/share/pixmaps
+share/pixmaps/bitcoin128.png usr/share/pixmaps
 debian/mia-qt.desktop usr/share/applications
 debian/mia-qt.protocol usr/share/kde4/services/

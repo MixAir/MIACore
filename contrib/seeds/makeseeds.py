@@ -1,4 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# Copyright (c) 2013-2017 The Bitcoin Core developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
 # Generate seeds.txt from Pieter's DNS seeder
 #
@@ -7,13 +10,13 @@ NSEEDS=512
 
 MAX_SEEDS_PER_ASN=2
 
-MIN_BLOCKS = 400000
+MIN_BLOCKS = 225000
 
 # These are hosts that have been observed to be behaving strangely (e.g.
 # aggressively connecting to every node).
-SUSPICIOUS_HOSTS = set([
-    "127.0.0.1"
-])
+SUSPICIOUS_HOSTS = {
+    ""
+}
 
 import re
 import sys
@@ -23,7 +26,7 @@ import collections
 PATTERN_IPV4 = re.compile(r"^((\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})):(\d+)$")
 PATTERN_IPV6 = re.compile(r"^\[([0-9a-z:]+)\]:(\d+)$")
 PATTERN_ONION = re.compile(r"^([abcdefghijklmnopqrstuvwxyz234567]{16}\.onion):(\d+)$")
-PATTERN_AGENT = re.compile(r"^(\/Satoshi:0\.8\.6\/|\/Satoshi:0\.9\.(2|3|4|5)\/|\/Core:0.1(0|1|2).\d{1,2}.\d{1,2}\/)$")
+PATTERN_AGENT = re.compile(r"^(/MIACore:2.2.(0|1|99)/)$")
 
 def parseline(line):
     sline = line.split()
@@ -72,7 +75,10 @@ def parseline(line):
     # Extract protocol version.
     version = int(sline[10])
     # Extract user agent.
-    agent = sline[11][1:-1]
+    if len(sline) > 11:
+        agent = sline[11][1:] + sline[12][:-1]
+    else:
+        agent = sline[11][1:-1]
     # Extract service flags.
     service = int(sline[9], 16)
     # Extract blocks.
@@ -97,7 +103,7 @@ def filtermultiport(ips):
     hist = collections.defaultdict(list)
     for ip in ips:
         hist[ip['sortkey']].append(ip)
-    return [value[0] for (key,value) in hist.items() if len(value)==1]
+    return [value[0] for (key,value) in list(hist.items()) if len(value)==1]
 
 # Based on Greg Maxwell's seed_filter.py
 def filterbyasn(ips, max_per_asn, max_total):
@@ -145,10 +151,10 @@ def main():
     # Require at least 50% 30-day uptime.
     ips = [ip for ip in ips if ip['uptime'] > 50]
     # Require a known and recent user agent.
-    ips = [ip for ip in ips if PATTERN_AGENT.match(ip['agent'])]
+    ips = [ip for ip in ips if PATTERN_AGENT.match(re.sub(' ', '-', ip['agent']))]
     # Sort by availability (and use last success as tie breaker)
     ips.sort(key=lambda x: (x['uptime'], x['lastsuccess'], x['ip']), reverse=True)
-    # Filter out hosts with multiple ports, these are likely abusive
+    # Filter out hosts with multiple bitcoin ports, these are likely abusive
     ips = filtermultiport(ips)
     # Look up ASNs and limit results, both per ASN and globally.
     ips = filterbyasn(ips, MAX_SEEDS_PER_ASN, NSEEDS)
@@ -157,9 +163,9 @@ def main():
 
     for ip in ips:
         if ip['net'] == 'ipv6':
-            print '[%s]:%i' % (ip['ip'], ip['port'])
+            print('[%s]:%i' % (ip['ip'], ip['port']))
         else:
-            print '%s:%i' % (ip['ip'], ip['port'])
+            print('%s:%i' % (ip['ip'], ip['port']))
 
 if __name__ == '__main__':
     main()

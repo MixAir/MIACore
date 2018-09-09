@@ -1,7 +1,7 @@
 # /etc/conf.d/miad: config file for /etc/init.d/miad
 
 # Config file location
-#BITCOIND_CONFIGFILE="/etc/miacore/mia.conf"
+#BITCOIND_CONFIGFILE="/etc/mia/mia.conf"
 
 # What directory to write pidfile to?  (created and owned by $BITCOIND_USER)
 #BITCOIND_PIDDIR="/var/run/miad"
@@ -13,8 +13,8 @@
 #BITCOIND_DATADIR="/var/lib/miad"
 
 # User and group to own miad process
-#BITCOIND_USER="miacore"
-#BITCOIND_GROUP="miacore"
+#BITCOIND_USER="mia"
+#BITCOIND_GROUP="mia"
 
 # Path to miad executable
 #BITCOIND_BIN="/usr/bin/miad"
@@ -23,11 +23,4 @@
 #BITCOIND_NICE=0
 
 # Additional options (avoid -conf and -datadir, use flags above)
-BITCOIND_OPTS="-disablewallet"
-
-# The timeout in seconds OpenRC will wait for bitcoind to terminate
-# after a SIGTERM has been raised.
-# Note that this will be mapped as argument to start-stop-daemon's
-# '--retry' option, which means you can specify a retry schedule
-# here. For more information see man 8 start-stop-daemon.
-BITCOIND_SIGTERM_TIMEOUT=60
+BITCOIND_OPTS=""

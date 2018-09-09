@@ -1,4 +1,4 @@
-MIA Core 0.12.1
+Luxcore
 =====================
 
 Intro
@@ -13,11 +13,7 @@ Setup
 -----
 Unpack the files into a directory and run mia-qt.exe.
 
-MIA Core is the original MIA client and it builds the backbone of the network.
+Luxcore is the original MIA client and it builds the backbone of the network.
 However, it downloads and stores the entire history of MIA transactions;
 depending on the speed of your computer and network connection, the synchronization
 process can take anywhere from a few hours to a day or more.
-
-See the mia wiki at:
-  https://MixAir.atlassian.net/wiki/
-for more help and information.

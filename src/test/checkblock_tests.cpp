@@ -1,12 +1,14 @@
-// Copyright (c) 2013-2015 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2013-2014 The Bitcoin Core developers
+// Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+//
+// Unit tests for block.CheckBlock()
+//
 
 #include "clientversion.h"
 #include "consensus/validation.h"
-#include "validation.h" // For CheckBlock
-#include "primitives/block.h"
-#include "test/test_mia.h"
+#include "main.h"
 #include "utiltime.h"
 
 #include <cstdio>
@@ -16,7 +18,7 @@
 #include <boost/test/unit_test.hpp>
 
 
-BOOST_FIXTURE_TEST_SUITE(CheckBlock_tests, BasicTestingSetup)
+BOOST_AUTO_TEST_SUITE(CheckBlock_tests)
 
 bool read_block(const std::string& filename, CBlock& block)
 {
@@ -57,7 +59,7 @@ BOOST_AUTO_TEST_CASE(May15)
 
         // After May 15'th, big blocks are OK:
         forkingBlock.nTime = tMay15; // Invalidates PoW
-        BOOST_CHECK(CheckBlock(forkingBlock, state, false, false));
+        BOOST_CHECK(CheckBlock(forkingBlock, state, Params().GetConsensus(), false, false));
     }
 
     SetMockTime(0);

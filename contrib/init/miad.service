@@ -3,13 +3,17 @@ Description=MIA's distributed currency daemon
 After=network.target
 
 [Service]
-User=miacore
-Group=miacore
+User=mia
+Group=mia
 
 Type=forking
 PIDFile=/var/lib/miad/miad.pid
+
 ExecStart=/usr/bin/miad -daemon -pid=/var/lib/miad/miad.pid \
--conf=/etc/miacore/mia.conf -datadir=/var/lib/miad -disablewallet
+          -conf=/etc/mia/mia.conf -datadir=/var/lib/miad
+
+ExecStop=-/usr/bin/mia-cli -conf=/etc/mia/mia.conf \
+         -datadir=/var/lib/miad stop
 
 Restart=always
 PrivateTmp=true

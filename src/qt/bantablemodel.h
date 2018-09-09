@@ -1,10 +1,11 @@
-// Copyright (c) 2011-2015 The Bitcoin Core developers
+// Copyright (c) 2011-2013 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_QT_BANTABLEMODEL_H
 #define BITCOIN_QT_BANTABLEMODEL_H
 
+#include "main.h"
 #include "net.h"
 
 #include <QAbstractTableModel>
@@ -12,6 +13,10 @@
 
 class ClientModel;
 class BanTablePriv;
+
+QT_BEGIN_NAMESPACE
+class QTimer;
+QT_END_NAMESPACE
 
 struct CCombinedBan {
     CSubNet subnet;
@@ -22,7 +27,7 @@ class BannedNodeLessThan
 {
 public:
     BannedNodeLessThan(int nColumn, Qt::SortOrder fOrder) :
-        column(nColumn), order(fOrder) {}
+            column(nColumn), order(fOrder) {}
     bool operator()(const CCombinedBan& left, const CCombinedBan& right) const;
 
 private:
@@ -41,6 +46,7 @@ class BanTableModel : public QAbstractTableModel
 public:
     explicit BanTableModel(ClientModel *parent = 0);
     ~BanTableModel();
+
     void startAutoRefresh();
     void stopAutoRefresh();
 
@@ -61,13 +67,14 @@ public:
     bool shouldShow();
     /*@}*/
 
-public Q_SLOTS:
-    void refresh();
+public slots:
+            void refresh();
 
 private:
     ClientModel *clientModel;
     QStringList columns;
     std::unique_ptr<BanTablePriv> priv;
+    QTimer *timer;
 };
 
 #endif // BITCOIN_QT_BANTABLEMODEL_H

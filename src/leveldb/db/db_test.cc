@@ -1753,7 +1753,7 @@ static void MTThreadBody(void* arg) {
   fprintf(stderr, "... starting thread %d\n", id);
   Random rnd(1000 + id);
   std::string value;
-  char valbuf[1000];
+  char valbuf[1500];
   while (t->state->stop.Acquire_Load() == NULL) {
     t->state->counter[id].Release_Store(reinterpret_cast<void*>(counter));
 

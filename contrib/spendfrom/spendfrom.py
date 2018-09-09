@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 #
-# Use the raw transactions API to spend mias received on particular addresses,
+# Use the raw transactions API to spend MIAs received on particular addresses,
 # and send any change back to that same address.
 #
 # Example usage:
 #  spendfrom.py  # Lists available funds
 #  spendfrom.py --from=ADDRESS --to=ADDRESS --amount=11.00
 #
-# Assumes it will talk to a miad or MIA-Qt running
+# Assumes it will talk to a miad or mia-Qt running
 # on localhost.
 #
 # Depends on jsonrpc
@@ -33,12 +33,12 @@ def check_json_precision():
         raise RuntimeError("JSON encode/decode loses precision")
 
 def determine_db_dir():
-    """Return the default location of the MIA Core data directory"""
+    """Return the default location of the mia data directory"""
     if platform.system() == "Darwin":
-        return os.path.expanduser("~/Library/Application Support/MIACore/")
+        return os.path.expanduser("~/Library/Application Support/MIA/")
     elif platform.system() == "Windows":
-        return os.path.join(os.environ['APPDATA'], "MIACore")
-    return os.path.expanduser("~/.miacore")
+        return os.path.join(os.environ['APPDATA'], "MIA")
+    return os.path.expanduser("~/.mia")
 
 def read_bitcoin_config(dbdir):
     """Read the mia.conf file from dbdir, returns dictionary of settings"""
@@ -63,11 +63,11 @@ def read_bitcoin_config(dbdir):
     return dict(config_parser.items("all"))
 
 def connect_JSON(config):
-    """Connect to a MIA Core JSON-RPC server"""
+    """Connect to a mia JSON-RPC server"""
     testnet = config.get('testnet', '0')
     testnet = (int(testnet) > 0)  # 0/1 in config file, convert to True/False
     if not 'rpcport' in config:
-        config['rpcport'] = 19991 if testnet else 9991
+        config['rpcport'] = 28666 if testnet else 51473
     connect = "http://%s:%s@127.0.0.1:%s"%(config['rpcuser'], config['rpcpassword'], config['rpcport'])
     try:
         result = ServiceProxy(connect)
@@ -221,9 +221,9 @@ def main():
 
     parser = optparse.OptionParser(usage="%prog [options]")
     parser.add_option("--from", dest="fromaddresses", default=None,
-                      help="addresses to get mias from")
+                      help="addresses to get MIAs from")
     parser.add_option("--to", dest="to", default=None,
-                      help="address to get send mias to")
+                      help="address to get send MIAs to")
     parser.add_option("--amount", dest="amount", default=None,
                       help="amount to send")
     parser.add_option("--fee", dest="fee", default="0.0",

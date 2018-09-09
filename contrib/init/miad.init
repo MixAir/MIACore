@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#  miad The MIA Core server.
+#  miad The Luxcore server.
 #
 #
 # chkconfig: 345 80 20
@@ -23,14 +23,14 @@ prog=miad
 lockfile=${BITCOIND_LOCKFILE-/var/lock/subsys/miad}
 
 # miad defaults to /usr/bin/miad, override with BITCOIND_BIN
-miad=${BITCOIND_BIN-/usr/bin/miad}
+bitcoind=${BITCOIND_BIN-/usr/bin/miad}
 
 # miad opts default to -disablewallet, override with BITCOIND_OPTS
-miad_opts=${BITCOIND_OPTS--disablewallet}
+bitcoind_opts=${BITCOIND_OPTS}
 
 start() {
     echo -n $"Starting $prog: "
-    daemon $DAEMONOPTS $miad $miad_opts
+    daemon $DAEMONOPTS $bitcoind $bitcoind_opts
     RETVAL=$?
     echo
     [ $RETVAL -eq 0 ] && touch $lockfile

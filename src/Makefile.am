@@ -1,33 +1,42 @@
-DIST_SUBDIRS = secp256k1 univalue
-
-AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS) $(HARDENED_LDFLAGS)
-AM_CXXFLAGS = $(HARDENED_CXXFLAGS)
-AM_CPPFLAGS = $(HARDENED_CPPFLAGS)
+DIST_SUBDIRS = secp256k1
+AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS)
+AM_CXXFLAGS = $(HARDENED_CXXFLAGS) $(ERROR_CXXFLAGS) -DETH_FATDB=1
+AM_CPPFLAGS = $(HARDENED_CPPFLAGS) -DMIA_BUILD
 EXTRA_LIBRARIES =
 
-if EMBEDDED_UNIVALUE
-LIBUNIVALUE = univalue/libunivalue.la
-
-$(LIBUNIVALUE): $(wildcard univalue/lib/*) $(wildcard univalue/include/*)
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
-else
-LIBUNIVALUE = $(UNIVALUE_LIBS)
+if !TARGET_WINDOWS
+PIE_FLAGS = -fPIC
 endif
 
+EXTRA_LIBRARIES =
+
 BITCOIN_CONFIG_INCLUDES=-I$(builddir)/config
-BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS) $(CRYPTO_CFLAGS) $(SSL_CFLAGS)
+BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BDB_CPPFLAGS) $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS) $(CRYPTO_CFLAGS) $(SSL_CFLAGS) -I$(srcdir)/cpp-ethereum/utils
 
 BITCOIN_INCLUDES += -I$(srcdir)/secp256k1/include
-BITCOIN_INCLUDES += $(UNIVALUE_CFLAGS)
+
+BITCOIN_INCLUDES += -I$(srcdir)/cpp-ethereum
 
 LIBBITCOIN_SERVER=libbitcoin_server.a
-LIBBITCOIN_WALLET=libbitcoin_wallet.a
 LIBBITCOIN_COMMON=libbitcoin_common.a
+LIBBITCOIN_CONSENSUS=libbitcoin_consensus.a
 LIBBITCOIN_CLI=libbitcoin_cli.a
 LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
+LIBBITCOIN_UNIVALUE=univalue/libbitcoin_univalue.a
 LIBBITCOINQT=qt/libbitcoinqt.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
+LIBCRYPTOPP=cryptopp/libcryptopp.a
+
+if ENABLE_ZMQ
+LIBBITCOIN_ZMQ=libbitcoin_zmq.a
+endif
+if BUILD_BITCOIN_LIBS
+LIBBITCOINCONSENSUS=libbitcoinconsensus.la
+endif
+if ENABLE_WALLET
+LIBBITCOIN_WALLET=libbitcoin_wallet.a
+endif
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
@@ -35,29 +44,20 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
 EXTRA_LIBRARIES += \
-  crypto/libbitcoin_crypto.a \
-  libbitcoin_util.a \
-  libbitcoin_common.a \
-  libbitcoin_server.a \
-  libbitcoin_cli.a
-if ENABLE_WALLET
-BITCOIN_INCLUDES += $(BDB_CPPFLAGS)
-EXTRA_LIBRARIES += libbitcoin_wallet.a
-endif
-if ENABLE_ZMQ
-EXTRA_LIBRARIES += libbitcoin_zmq.a
-endif
+  $(LIBBITCOIN_CRYPTO) \
+  $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_COMMON) \
+  univalue/libbitcoin_univalue.a \
+  $(LIBBITCOIN_CONSENSUS) \
+  $(LIBBITCOIN_SERVER) \
+  $(LIBBITCOIN_CLI) \
+  $(LIBBITCOIN_WALLET) \
+  $(LIBBITCOIN_ZMQ)
 
-if BUILD_BITCOIN_LIBS
-lib_LTLIBRARIES = libmiaconsensus.la
-LIBBITCOIN_CONSENSUS=libmiaconsensus.la
-else
-LIBBITCOIN_CONSENSUS=
-endif
+lib_LTLIBRARIES = $(LIBBITCOINCONSENSUS)
 
 bin_PROGRAMS =
 TESTS =
-BENCHMARKS =
 
 if BUILD_BITCOIND
   bin_PROGRAMS += miad
@@ -67,23 +67,18 @@ if BUILD_BITCOIN_UTILS
   bin_PROGRAMS += mia-cli mia-tx
 endif
 
-.PHONY: FORCE check-symbols check-security
-# mia core #
+.PHONY: FORCE
+# Luxcore #
 BITCOIN_CORE_H = \
-  addrdb.h \
   activemasternode.h \
-  addressindex.h \
-  spentindex.h \
   addrman.h \
   alert.h \
+  allocators.h \
   amount.h \
-  arith_uint256.h \
   base58.h \
-  bip39.h \
-  bip39_english.h \
+  bech32.h \
+  bip38.h \
   bloom.h \
-  cachemap.h \
-  cachemultimap.h \
   chain.h \
   chainparams.h \
   chainparamsbase.h \
@@ -99,53 +94,33 @@ BITCOIN_CORE_H = \
   compat/sanity.h \
   compressor.h \
   consensus/consensus.h \
-  consensus/merkle.h \
   consensus/params.h \
-  consensus/validation.h \
   core_io.h \
   core_memusage.h \
-  privatesend.h \
-  privatesend-client.h \
-  privatesend-server.h \
-  privatesend-util.h \
-  dsnotificationinterface.h \
-  governance.h \
-  governance-classes.h \
-  governance-exceptions.h \
-  governance-object.h \
-  governance-validators.h \
-  governance-vote.h \
-  governance-votedb.h \
-  flat-database.h \
+  crypter.h \
+  darksend.h \
+  db.h \
   hash.h \
-  hdchain.h \
-  httprpc.h \
-  httpserver.h \
+  indirectmap.h \
   init.h \
   instantx.h \
   key.h \
-  keepass.h \
   keystore.h \
-  dbwrapper.h \
+  leveldbwrapper.h \
   limitedmap.h \
+  main.h \
   masternode.h \
-  masternode-payments.h \
-  masternode-sync.h \
-  masternodeman.h \
   masternodeconfig.h \
   memusage.h \
   merkleblock.h \
-  messagesigner.h \
   miner.h \
-  net.h \
-  net_processing.h \
-  netaddress.h \
+  mruset.h \
   netbase.h \
-  netfulfilledman.h \
+  net.h \
   noui.h \
   policy/fees.h \
   policy/policy.h \
-  policy/rbf.h \
+  rbf.h \
   pow.h \
   prevector.h \
   primitives/block.h \
@@ -153,53 +128,55 @@ BITCOIN_CORE_H = \
   protocol.h \
   pubkey.h \
   random.h \
+  reverse_iterator.h \
   reverselock.h \
-  rpc/client.h \
-  rpc/protocol.h \
-  rpc/server.h \
+  rpcclient.h \
+  rpcprotocol.h \
+  httprpc.h \
+  httpserver.h \
+  miacontrol.h \
+  rpcserver.h \
+  rpcutil.h \
   scheduler.h \
   script/interpreter.h \
   script/script.h \
-  script/script_error.h \
   script/sigcache.h \
   script/sign.h \
   script/standard.h \
+  script/script_error.h \
   serialize.h \
   spork.h \
+  stake.h \
   streams.h \
-  support/allocators/secure.h \
   support/allocators/zeroafterfree.h \
   support/cleanse.h \
-  support/pagelocker.h \
   sync.h \
   threadsafety.h \
-  threadinterrupt.h \
   timedata.h \
   tinyformat.h \
-  torcontrol.h \
   txdb.h \
   txmempool.h \
   ui_interface.h \
   uint256.h \
   undo.h \
   util.h \
-  utilmoneystr.h \
   utilstrencodings.h \
+  utilmoneystr.h \
   utiltime.h \
-  validation.h \
   validationinterface.h \
   version.h \
   versionbits.h \
-  wallet/crypter.h \
-  wallet/db.h \
-  wallet/wallet.h \
-  wallet/wallet_ismine.h \
-  wallet/walletdb.h \
+  wallet.h \
+  wallet_ismine.h \
+  walletdb.h \
   zmq/zmqabstractnotifier.h \
-  zmq/zmqconfig.h\
+  zmq/zmqconfig.h \
   zmq/zmqnotificationinterface.h \
-  zmq/zmqpublishnotifier.h
-
+  zmq/zmqpublishnotifier.h \
+  mia/miastate.h \
+  mia/miatransaction.h \
+  mia/miaDGP.h \
+  mia/storageresults.h
 
 obj/build.h: FORCE
 	@$(MKDIR_P) $(builddir)/obj
@@ -212,56 +189,45 @@ libbitcoin_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CP
 libbitcoin_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_server_a_SOURCES = \
   addrman.cpp \
-  addrdb.cpp \
   alert.cpp \
   bloom.cpp \
   chain.cpp \
   checkpoints.cpp \
-  httprpc.cpp \
-  httpserver.cpp \
+  consensus/validation.cpp \
   init.cpp \
-  dbwrapper.cpp \
-  governance.cpp \
-  governance-classes.cpp \
-  governance-object.cpp \
-  governance-validators.cpp \
-  governance-vote.cpp \
-  governance-votedb.cpp \
+  leveldbwrapper.cpp \
+  main.cpp \
   merkleblock.cpp \
-  messagesigner.cpp \
   miner.cpp \
   net.cpp \
-  netfulfilledman.cpp \
-  net_processing.cpp \
   noui.cpp \
   policy/fees.cpp \
   policy/policy.cpp \
   pow.cpp \
-  privatesend.cpp \
-  privatesend-server.cpp \
   rest.cpp \
-  rpc/blockchain.cpp \
-  rpc/masternode.cpp \
-  rpc/governance.cpp \
-  rpc/mining.cpp \
-  rpc/misc.cpp \
-  rpc/net.cpp \
-  rpc/rawtransaction.cpp \
-  rpc/server.cpp \
+  rpcblockchain.cpp \
+  rpcdarksend.cpp \
+  rpcmining.cpp \
+  rpcmisc.cpp \
+  rpcnet.cpp \
+  rpcrawtransaction.cpp \
+  httprpc.cpp \
+  httpserver.cpp \
+  miacontrol.cpp \
+  rpcserver.cpp \
   script/sigcache.cpp \
-  sendalert.cpp \
   timedata.cpp \
-  torcontrol.cpp \
   txdb.cpp \
   txmempool.cpp \
-  validation.cpp \
   validationinterface.cpp \
   versionbits.cpp \
+  mia/miastate.cpp \
+  mia/miatransaction.cpp \
+  mia/miaDGP.cpp \
+  mia/storageresults.cpp \
   $(BITCOIN_CORE_H)
 
 if ENABLE_ZMQ
-LIBBITCOIN_ZMQ=libbitcoin_zmq.a
-
 libbitcoin_zmq_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
 libbitcoin_zmq_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_zmq_a_SOURCES = \
@@ -270,209 +236,391 @@ libbitcoin_zmq_a_SOURCES = \
   zmq/zmqpublishnotifier.cpp
 endif
 
-
 # wallet: shared between miad and mia-qt, but only linked
 # when wallet enabled
-libbitcoin_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+
+libbitcoin_wallet_a_CFLAGS = $(PIE_FLAGS)
+libbitcoin_wallet_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_wallet_a_SOURCES = \
   activemasternode.cpp \
-  dsnotificationinterface.cpp \
+  bip38.cpp \
+  darksend.cpp \
+  db.cpp \
+  crypter.cpp \
   instantx.cpp \
   masternode.cpp \
-  masternode-payments.cpp \
-  masternode-sync.cpp \
   masternodeconfig.cpp \
-  masternodeman.cpp \
-  keepass.cpp \
-  privatesend-client.cpp \
-  privatesend-util.cpp \
-  wallet/crypter.cpp \
-  wallet/db.cpp \
-  wallet/rpcdump.cpp \
-  wallet/rpcwallet.cpp \
-  wallet/wallet.cpp \
-  wallet/wallet_ismine.cpp \
-  wallet/walletdb.cpp \
-  policy/rbf.cpp \
+  rpcdump.cpp \
+  rpcwallet.cpp \
+  stake.cpp \
+  wallet.cpp \
+  wallet_ismine.cpp \
+  walletdb.cpp \
+  rbf.cpp \
+  script/sign.cpp \
+  miner.cpp \
+  crypter.cpp \
   $(BITCOIN_CORE_H)
 
 # crypto primitives library
-crypto_libbitcoin_crypto_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_CONFIG_INCLUDES) $(PIC_FLAGS)
-crypto_libbitcoin_crypto_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) $(PIC_FLAGS)
+crypto_libbitcoin_crypto_a_CFLAGS = $(PIE_FLAGS)
+crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES) $(BITCOIN_INCLUDES) -DMIA_BUILD
 crypto_libbitcoin_crypto_a_SOURCES = \
-  crypto/common.h \
+  crypto/sha1.cpp \
+  crypto/sha256.cpp \
+  crypto/sha512.cpp \
   crypto/hmac_sha256.cpp \
-  crypto/hmac_sha256.h \
+  crypto/rfc6979_hmac_sha256.cpp \
   crypto/hmac_sha512.cpp \
-  crypto/hmac_sha512.h \
+  crypto/scrypt.cpp \
   crypto/ripemd160.cpp \
   crypto/aes_helper.c \
-  crypto/ripemd160.h \
-  crypto/sha1.cpp \
-  crypto/sha1.h \
-  crypto/sha256.cpp \
-  crypto/sha256.h \
-  crypto/sha512.cpp \
-  crypto/sha512.h
-
-# x11
-crypto_libbitcoin_crypto_a_SOURCES += \
-  crypto/blake.c \
-  crypto/bmw.c \
-  crypto/cubehash.c \
   crypto/echo.c \
-  crypto/groestl.c \
+  crypto/cubehash.c \
   crypto/jh.c \
-  crypto/keccak.c \
-  crypto/luffa.c \
-  crypto/shavite.c \
-  crypto/simd.c \
   crypto/skein.c \
-	crypto/neoscrypt.c \
-  crypto/sph_blake.h \
-  crypto/sph_bmw.h \
+  crypto/gost.c \
+  crypto/fugue.c \
+  crypto/lyra2/Lyra2.c \
+  crypto/lyra2/Sponge.c  \
+  crypto/common.h \
+  crypto/sha256.h \
+  crypto/sha512.h \
+  crypto/hmac_sha256.h \
+  crypto/rfc6979_hmac_sha256.h \
+  crypto/hmac_sha512.h \
+  crypto/scrypt.h \
+  crypto/sha1.h \
+  crypto/ripemd160.h \
+  crypto/sph_types.h \
+  crypto/sph_jh.h \
+  crypto/sph_skein.h \
+  crypto/sph_fugue.h \
+  crypto/sph_gost.h \
   crypto/sph_cubehash.h \
   crypto/sph_echo.h \
-  crypto/sph_groestl.h \
-  crypto/sph_jh.h \
-  crypto/sph_keccak.h \
-  crypto/sph_luffa.h \
-  crypto/sph_shavite.h \
-  crypto/sph_simd.h \
-  crypto/sph_skein.h \
-	crypto/neoscrypt.h \
-  crypto/sph_types.h
+  crypto/lyra2/Lyra2.h \
+  crypto/lyra2/Sponge.h \
+  cpp-ethereum/utils/libscrypt/b64.c \
+  cpp-ethereum/utils/libscrypt/b64.h \
+  cpp-ethereum/utils/libscrypt/crypto-mcf.c \
+  cpp-ethereum/utils/libscrypt/crypto_scrypt-check.c \
+  cpp-ethereum/utils/libscrypt/crypto_scrypt-hash.c \
+  cpp-ethereum/utils/libscrypt/crypto_scrypt-hexconvert.c \
+  cpp-ethereum/utils/libscrypt/crypto_scrypt-hexconvert.h \
+  cpp-ethereum/utils/libscrypt/crypto_scrypt-nosse.c \
+  cpp-ethereum/utils/libscrypt/crypto-scrypt-saltgen.c \
+  cpp-ethereum/utils/libscrypt/libscrypt.h \
+  cpp-ethereum/utils/libscrypt/sha256.c \
+  cpp-ethereum/utils/libscrypt/sha256.h \
+  cpp-ethereum/utils/libscrypt/slowequals.c \
+  cpp-ethereum/utils/libscrypt/slowequals.h \
+  cpp-ethereum/utils/libscrypt/sysendian.h
 
-crypto_libbitcoin_crypto_a_SOURCES += \
-		  crypto/aes.cpp \
-		  crypto/aes.h \
-		  crypto/common.h \
-		  crypto/hmac_sha256.cpp \
-		  crypto/hmac_sha256.h \
-		  crypto/hmac_sha512.cpp \
-		  crypto/hmac_sha512.h \
-		  crypto/ripemd160.cpp \
-		  crypto/ripemd160.h \
-		  crypto/sha1.cpp \
-		  crypto/sha1.h \
-		  crypto/sha256.cpp \
-		  crypto/sha256.h \
-		  crypto/sha512.cpp \
-		  crypto/sha512.h \
-		  crypto/aes_helper.c \
-		  crypto/luffa.c \
-		  crypto/groestl.c \
-		  crypto/jh.c \
-		  crypto/echo.c \
-		  crypto/shavite.c \
-		  crypto/keccak.c \
-		  crypto/skein.c \
-		  crypto/fugue.c \
-		  crypto/hamsi.c \
-		  crypto/haval.c \
-		  crypto/shabal.c \
-		  crypto/whirlpool.c \
-		  crypto/sph_sha2big.c \
-		  crypto/bmw.c \
-		  crypto/simd.c \
-		  crypto/cubehash.c \
-		  crypto/blake.c \
-		  crypto/sph_blake.h \
-		  crypto/sph_bmw.h \
-		  crypto/sph_cubehash.h \
-		  crypto/sph_echo.h \
-		  crypto/sph_groestl.h \
-		  crypto/sph_jh.h \
-		  crypto/sph_keccak.h \
-		  crypto/sph_luffa.h \
-		  crypto/sph_shavite.h \
-		  crypto/sph_simd.h \
-		  crypto/sph_skein.h \
-		  crypto/sph_types.h \
-		  crypto/sph_fugue.h \
-		  crypto/sph_hamsi.h \
-		  crypto/sph_haval.h \
-		  crypto/sph_shabal.h \
-		  crypto/sph_sha2.h \
-		  crypto/sph_whirlpool.h \
-		  crypto/xevan.h
+if USE_ASM
+crypto/crypto_libbitcoin_crypto_a-sha256.$(OBJEXT) : CXXFLAGS += -DUSE_ASM
+crypto/crypto_libbitcoin_crypto_a-sha256_sse4.$(OBJEXT) : CXXFLAGS += $(SSE42_CXXFLAGS) -DUSE_ASM
+crypto_libbitcoin_crypto_a_SOURCES += crypto/sha256_sse4.cpp
+endif
 
-# phi2
-crypto_libbitcoin_crypto_a_SOURCES += \
-			crypto/lyra2/Lyra2.c \
-			crypto/lyra2/Sponge.c \
-			crypto/gost.c \
-			crypto/lyra2/Lyra2.h \
-			crypto/lyra2/Sponge.h \
-			crypto/sph_gost.h
+# univalue JSON library
+univalue_libbitcoin_univalue_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+univalue_libbitcoin_univalue_a_SOURCES = \
+  univalue/univalue.cpp \
+  univalue/univalue_read.cpp \
+  univalue/univalue_write.cpp \
+  univalue/univalue_escapes.h \
+  univalue/univalue.h \
+  $(BITCOIN_CORE_H)
+
+# consensus: shared between all executables that validate any consensus rules.
+libbitcoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libbitcoin_consensus_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libbitcoin_consensus_a_SOURCES = \
+  allocators.cpp \
+  amount.h \
+  chainparamsbase.cpp \
+  coins.cpp \
+  consensus/merkle.cpp \
+  consensus/merkle.h \
+  consensus/params.h \
+  consensus/validation.h \
+  consensus/validation.cpp \
+  cpp-ethereum/libdevcore/CommonData.cpp \
+  cpp-ethereum/libdevcore/CommonData.h \
+  hash.cpp \
+  hash.h \
+  key.cpp \
+  prevector.h \
+  primitives/block.cpp \
+  primitives/block.h \
+  primitives/transaction.cpp \
+  primitives/transaction.h \
+  pubkey.cpp \
+  pubkey.h \
+  random.cpp \
+  script/bitcoinconsensus.cpp \
+  script/interpreter.cpp \
+  script/interpreter.h \
+  script/script.cpp \
+  script/script.h \
+  script/script_error.cpp \
+  script/script_error.h \
+  script/standard.cpp \
+  serialize.h \
+  tinyformat.h \
+  uint256.cpp \
+  uint256.h \
+  util.h \
+  util.cpp \
+  utilmoneystr.cpp \
+  utilstrencodings.cpp \
+  utilstrencodings.h \
+  utiltime.cpp \
+  version.h
 
 # common: shared between miad, and mia-qt and non-server tools
-libbitcoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libbitcoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) -DMIA_BUILD
 libbitcoin_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libbitcoin_common_a_CFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) -std=c99
 libbitcoin_common_a_SOURCES = \
+  allocators.cpp \
   amount.cpp \
-  arith_uint256.cpp \
   base58.cpp \
-  bip39.cpp \
+  bech32.cpp \
+  bip38.cpp \
   chainparams.cpp \
   coins.cpp \
   compressor.cpp \
-  consensus/merkle.cpp \
+  primitives/block.cpp \
+  primitives/transaction.cpp \
   core_read.cpp \
   core_write.cpp \
   hash.cpp \
-  hdchain.cpp \
   key.cpp \
   keystore.cpp \
-  netaddress.cpp \
   netbase.cpp \
-  primitives/block.cpp \
-  primitives/transaction.cpp \
   protocol.cpp \
   pubkey.cpp \
   scheduler.cpp \
   script/interpreter.cpp \
   script/script.cpp \
-  script/script_error.cpp \
   script/sign.cpp \
   script/standard.cpp \
+  script/script_error.cpp \
   spork.cpp \
+  cpp-ethereum/libdevcore/Base64.cpp \
+  cpp-ethereum/libdevcore/Base64.h \
+  cpp-ethereum/libdevcore/Common.cpp \
+  cpp-ethereum/libdevcore/Common.h \
+  cpp-ethereum/libdevcore/CommonData.cpp \
+  cpp-ethereum/libdevcore/CommonData.h \
+  cpp-ethereum/libdevcore/CommonIO.cpp \
+  cpp-ethereum/libdevcore/CommonIO.h \
+  cpp-ethereum/libdevcore/CommonJS.cpp \
+  cpp-ethereum/libdevcore/CommonJS.h \
+  cpp-ethereum/libdevcore/FileSystem.cpp \
+  cpp-ethereum/libdevcore/FileSystem.h \
+  cpp-ethereum/libdevcore/FixedHash.cpp \
+  cpp-ethereum/libdevcore/FixedHash.h \
+  cpp-ethereum/libdevcore/Guards.cpp \
+  cpp-ethereum/libdevcore/Guards.h \
+  cpp-ethereum/libdevcore/Hash.cpp \
+  cpp-ethereum/libdevcore/Hash.h \
+  cpp-ethereum/libdevcore/Log.cpp \
+  cpp-ethereum/libdevcore/Log.h \
+  cpp-ethereum/libdevcore/MemoryDB.cpp \
+  cpp-ethereum/libdevcore/MemoryDB.h \
+  cpp-ethereum/libdevcore/OverlayDB.cpp \
+  cpp-ethereum/libdevcore/OverlayDB.h \
+  cpp-ethereum/libdevcore/RLP.cpp \
+  cpp-ethereum/libdevcore/RLP.h \
+  cpp-ethereum/libdevcore/SHA3.cpp \
+  cpp-ethereum/libdevcore/SHA3.h \
+  cpp-ethereum/libdevcore/TransientDirectory.cpp \
+  cpp-ethereum/libdevcore/TransientDirectory.h \
+  cpp-ethereum/libdevcore/TrieCommon.cpp \
+  cpp-ethereum/libdevcore/TrieCommon.h \
+  cpp-ethereum/libdevcore/Worker.cpp \
+  cpp-ethereum/libdevcore/Worker.h \
+  cpp-ethereum/libevm/ExtVMFace.cpp \
+  cpp-ethereum/libevm/ExtVMFace.h \
+  cpp-ethereum/libevm/VM.cpp \
+  cpp-ethereum/libevm/VM.h \
+  cpp-ethereum/libevm/VMOpt.cpp \
+  cpp-ethereum/libevm/VMCalls.cpp \
+  cpp-ethereum/libevm/VMFactory.cpp \
+  cpp-ethereum/libevm/VMFactory.h \
+  cpp-ethereum/libevmcore/Instruction.cpp \
+  cpp-ethereum/libevmcore/Instruction.h \
+  cpp-ethereum/libevmcore/Exceptions.h \
+  cpp-ethereum/libevmcore/EVMSchedule.h \
+  cpp-ethereum/libethereum/Account.cpp \
+  cpp-ethereum/libethereum/Defaults.cpp \
+  cpp-ethereum/libethereum/GasPricer.cpp \
+  cpp-ethereum/libethereum/State.cpp \
+  cpp-ethereum/libethcore/ABI.cpp \
+  cpp-ethereum/libethcore/ChainOperationParams.cpp \
+  cpp-ethereum/libethcore/Common.cpp \
+  cpp-ethereum/libethcore/ICAP.cpp \
+  cpp-ethereum/libethcore/Precompiled.cpp \
+  cpp-ethereum/libdevcore/TrieDB.cpp \
+  cpp-ethereum/libdevcrypto/Common.cpp \
+  cpp-ethereum/libdevcrypto/CryptoPP.cpp \
+  cpp-ethereum/libdevcrypto/AES.cpp \
+  cpp-ethereum/libdevcrypto/ECDHE.cpp \
+  cpp-ethereum/libethashseal/GenesisInfo.cpp \
+  cpp-ethereum/libethereum/ChainParams.cpp \
+  cpp-ethereum/libethcore/Transaction.cpp \
+  cpp-ethereum/libethereum/Transaction.cpp \
+  cpp-ethereum/libethereum/Executive.cpp \
+  cpp-ethereum/libethereum/ExtVM.cpp \
+  cpp-ethereum/libethereum/Block.cpp \
+  cpp-ethereum/libethereum/BlockChain.cpp \
+  cpp-ethereum/libethereum/BlockDetails.cpp \
+  cpp-ethereum/libethereum/TransactionQueue.cpp \
+  cpp-ethereum/libethereum/BlockQueue.cpp \
+  cpp-ethereum/libethcore/BlockHeader.cpp \
+  cpp-ethereum/libethereum/TransactionReceipt.cpp \
+  cpp-ethereum/libethcore/SealEngine.cpp \
+  cpp-ethereum/libdevcore/TrieHash.cpp \
+  cpp-ethereum/libethereum/GenesisInfo.cpp \
+  cpp-ethereum/libethashseal/Ethash.cpp \
+  cpp-ethereum/libethashseal/EthashCPUMiner.cpp \
+  cpp-ethereum/libethashseal/EthashAux.cpp \
+  cpp-ethereum/libethashseal/EthashProofOfWork.cpp \
+  cpp-ethereum/libethereum/Account.h \
+  cpp-ethereum/libethereum/Defaults.h \
+  cpp-ethereum/libethereum/GasPricer.h \
+  cpp-ethereum/libethereum/State.h \
+  cpp-ethereum/libethcore/ABI.h \
+  cpp-ethereum/libethcore/ChainOperationParams.h \
+  cpp-ethereum/libethcore/Common.h \
+  cpp-ethereum/libethcore/ICAP.h \
+  cpp-ethereum/libethcore/Precompiled.h \
+  cpp-ethereum/libdevcore/TrieDB.h \
+  cpp-ethereum/libdevcrypto/Common.h \
+  cpp-ethereum/libdevcrypto/CryptoPP.h \
+  cpp-ethereum/libdevcrypto/AES.h \
+  cpp-ethereum/libdevcrypto/ECDHE.h \
+  cpp-ethereum/libethashseal/GenesisInfo.h \
+  cpp-ethereum/libethereum/ChainParams.h \
+  cpp-ethereum/libethcore/Transaction.h \
+  cpp-ethereum/libethcore/Exceptions.h \
+  cpp-ethereum/libethereum/Transaction.h \
+  cpp-ethereum/libethereum/Executive.h \
+  cpp-ethereum/libethereum/ExtVM.h \
+  cpp-ethereum/libethereum/Block.h \
+  cpp-ethereum/libethereum/BlockChain.h \
+  cpp-ethereum/libethereum/BlockDetails.h \
+  cpp-ethereum/libethereum/TransactionQueue.h \
+  cpp-ethereum/libethereum/BlockQueue.h \
+  cpp-ethereum/libethcore/BlockHeader.h \
+  cpp-ethereum/libethereum/TransactionReceipt.h \
+  cpp-ethereum/libethcore/SealEngine.h \
+  cpp-ethereum/libdevcore/TrieHash.h \
+  cpp-ethereum/libethereum/GenesisInfo.h \
+  cpp-ethereum/libethashseal/Ethash.h \
+  cpp-ethereum/libethashseal/EthashCPUMiner.h \
+  cpp-ethereum/libethashseal/EthashAux.h \
+  cpp-ethereum/libethashseal/EthashProofOfWork.h \
+  cpp-ethereum/libethash/internal.c \
+  cpp-ethereum/libethash/io.c \
+  cpp-ethereum/libethash/sha3.c \
+  cpp-ethereum/libethash/internal.h \
+  cpp-ethereum/libethash/io.h \
+  cpp-ethereum/libethash/sha3.h \
+  cpp-ethereum/libdevcore/vector_ref.h \
+  cpp-ethereum/libdevcore/Exceptions.h \
+  cpp-ethereum/libdevcore/db.h \
+  cpp-ethereum/libdevcore/concurrent_queue.h \
+  cpp-ethereum/libdevcore/Terminal.h \
+  cpp-ethereum/libethereum/CodeSizeCache.h \
+  cpp-ethereum/libethereum/VerifiedBlock.h \
+  cpp-ethereum/libdevcore/Assertions.h \
+  cpp-ethereum/libdevcore/debugbreak.h \
+  cpp-ethereum/libethereum/GenericMiner.h \
+  cpp-ethereum/libevm/VMFace.h \
+  cpp-ethereum/libethereum/GenericFarm.h \
+  cpp-ethereum/libethereum/Interface.h \
+  cpp-ethereum/libethcore/CommonJS.h \
+  cpp-ethereum/libdevcore/picosha2.h \
+  cpp-ethereum/libevm/VMConfig.h \
+  cpp-ethereum/libethereum/LogFilter.h \
+  cpp-ethereum/libdevcrypto/Exceptions.h \
+  cpp-ethereum/libethashseal/genesis/mainNetwork.cpp \
+  cpp-ethereum/libethashseal/genesis/eip150Test.cpp \
+  cpp-ethereum/libethashseal/genesis/eip158Test.cpp \
+  cpp-ethereum/libethashseal/genesis/frontierTest.cpp \
+  cpp-ethereum/libethashseal/genesis/homesteadTest.cpp \
+  cpp-ethereum/libethashseal/genesis/mainNetworkTest.cpp \
+  cpp-ethereum/libethashseal/genesis/metropolisTest.cpp \
+  cpp-ethereum/libethashseal/genesis/miaMainNetwork.cpp \
+  cpp-ethereum/libethashseal/genesis/miaTestNetwork.cpp \
+  cpp-ethereum/libethashseal/genesis/ropsten.cpp \
+  cpp-ethereum/libethashseal/genesis/transitionnetTest.cpp \
+  cpp-ethereum/libethash/ethash.h \
+  cpp-ethereum/libethash/compiler.h \
+  cpp-ethereum/libethash/data_sizes.h \
+  cpp-ethereum/libethash/fnv.h \
+  cpp-ethereum/libethash/mmap.h \
+  cpp-ethereum/libethash/endian.h \
+  cpp-ethereum/libethash/io.h \
+  cpp-ethereum/libethash/ethash.h \
+  cpp-ethereum/libethash/internal.h \
+  cpp-ethereum/libethash/mmap_win32.c \
+  cpp-ethereum/utils/json_spirit/JsonSpiritHeaders.h \
+  cpp-ethereum/utils/json_spirit/json_spirit.h \
+  cpp-ethereum/utils/json_spirit/json_spirit_error_position.h \
+  cpp-ethereum/utils/json_spirit/json_spirit_reader.h \
+  cpp-ethereum/utils/json_spirit/json_spirit_reader_template.h \
+  cpp-ethereum/utils/json_spirit/json_spirit_stream_reader.h \
+  cpp-ethereum/utils/json_spirit/json_spirit_utils.h \
+  cpp-ethereum/utils/json_spirit/json_spirit_value.h \
+  cpp-ethereum/utils/json_spirit/json_spirit_writer.h \
+  cpp-ethereum/utils/json_spirit/json_spirit_writer_template.h \
   $(BITCOIN_CORE_H)
+
+if TARGET_WINDOWS
+    libbitcoin_common_a_SOURCES += \
+      cpp-ethereum/libethash/io_win32.c \
+      cpp-ethereum/libethash/util_win32.c
+else
+    libbitcoin_common_a_SOURCES += cpp-ethereum/libethash/io_posix.c
+endif
 
 # util: shared between all executables.
 # This library *must* be included to make sure that the glibc
 # backward-compatibility objects and their sanity checks are linked.
-libbitcoin_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libbitcoin_util_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_util_a_SOURCES = \
-  support/pagelocker.cpp \
-  chainparamsbase.cpp \
-  clientversion.cpp \
+  allocators.cpp \
+  compat/strnlen.cpp \
   compat/glibc_sanity.cpp \
   compat/glibcxx_sanity.cpp \
-  compat/strnlen.cpp \
+  chainparamsbase.cpp \
+  clientversion.cpp \
   random.cpp \
-  rpc/protocol.cpp \
+  rpcprotocol.cpp \
+  rpcutil.cpp \
   support/cleanse.cpp \
   sync.cpp \
   uint256.cpp \
-  threadinterrupt.cpp \
   util.cpp \
-  utilmoneystr.cpp \
   utilstrencodings.cpp \
+  utilmoneystr.cpp \
   utiltime.cpp \
   $(BITCOIN_CORE_H)
 
 if GLIBC_BACK_COMPAT
 libbitcoin_util_a_SOURCES += compat/glibc_compat.cpp
+libbitcoin_util_a_SOURCES += compat/glibcxx_compat.cpp
 endif
 
 # cli: shared between mia-cli and mia-qt
-libbitcoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_cli_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libbitcoin_cli_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_cli_a_SOURCES = \
-  rpc/client.cpp \
+  rpcclient.cpp \
   $(BITCOIN_CORE_H)
 
 nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
@@ -480,8 +628,7 @@ nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
 
 # bitcoind binary #
 miad_SOURCES = miad.cpp
-miad_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-miad_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+miad_CPPFLAGS = $(BITCOIN_INCLUDES)
 miad_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
@@ -491,28 +638,23 @@ endif
 miad_LDADD = \
   $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_COMMON) \
-  $(LIBUNIVALUE) \
+  $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_WALLET) \
+  $(LIBBITCOIN_ZMQ) \
+  $(LIBBITCOIN_CONSENSUS) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBLEVELDB) \
   $(LIBMEMENV) \
+  $(LIBCRYPTOPP) \
   $(LIBSECP256K1)
 
-if ENABLE_ZMQ
-miad_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
-endif
+miad_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(ZMQ_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS)
 
-if ENABLE_WALLET
-miad_LDADD += libbitcoin_wallet.a
-endif
-
-miad_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS)
 
 # mia-cli binary #
 mia_cli_SOURCES = mia-cli.cpp
-mia_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
-mia_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-mia_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+mia_cli_CPPFLAGS = $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
 
 if TARGET_WINDOWS
 mia_cli_SOURCES += mia-cli-res.rc
@@ -520,84 +662,81 @@ endif
 
 mia_cli_LDADD = \
   $(LIBBITCOIN_CLI) \
-  $(LIBUNIVALUE) \
-  $(LIBBITCOIN_UTIL)
-mia_cli_LDADD += $(BOOST_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS)
-#
-
-# mia-tx binary #
-mia_tx_SOURCES = mia-tx.cpp
-mia_tx_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-mia_tx_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-mia_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
-
-if TARGET_WINDOWS
-mia_tx_SOURCES += mia-tx-res.rc
-endif
-
-mia_tx_LDADD = \
-  $(LIBUNIVALUE) \
-  $(LIBBITCOIN_COMMON) \
+  $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBSECP256K1)
 
-mia_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
+mia_cli_LDADD += $(BOOST_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS)
 #
 
-# miaconsensus library #
+# mia-tx binary #
+mia_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
+mia_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+mia_tx_SOURCES =  \
+  mia-tx.cpp \
+  $(libbitcoin_common_a_SOURCES) \
+  $(libbitcoin_server_a_SOURCES)
+
+mia_tx_LDADD = \
+  $(LIBBITCOIN_UNIVALUE) \
+  $(LIBBITCOIN_COMMON) \
+  $(LIBBITCOIN_SERVER) \
+  $(LIBBITCOIN_CONSENSUS) \
+  $(LIBBITCOIN_WALLET) \
+  $(LIBBITCOIN_ZMQ) \
+  $(LIBLEVELDB) \
+  $(LIBMEMENV) \
+  $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_CRYPTO) \
+  $(LIBSECP256K1) \
+  $(LIBCRYPTOPP)
+
+mia_tx_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(MINIUPNPC_LIBS) $(ZMQ_LIBS)
+#
+
+# bitcoinconsensus library #
 if BUILD_BITCOIN_LIBS
-include_HEADERS = script/miaconsensus.h
-libmiaconsensus_la_SOURCES = \
-  crypto/hmac_sha512.cpp \
-  crypto/ripemd160.cpp \
-  crypto/sha1.cpp \
-  crypto/sha256.cpp \
-  crypto/sha512.cpp \
-  hash.cpp \
-  primitives/transaction.cpp \
-  pubkey.cpp \
-  script/miaconsensus.cpp \
-  script/interpreter.cpp \
-  script/script.cpp \
-  uint256.cpp \
-  utilstrencodings.cpp
+include_HEADERS = script/bitcoinconsensus.h
+
+libbitcoinconsensus_la_SOURCES = \
+  $(libbitcoin_consensus_a_SOURCES) \
+  $(BITCOIN_CORE_H)
 
 if GLIBC_BACK_COMPAT
-  libmiaconsensus_la_SOURCES += compat/glibc_compat.cpp
+  libbitcoinconsensus_la_SOURCES += compat/glibc_compat.cpp
+  libbitcoinconsensus_la_SOURCES += compat/glibcxx_compat.cpp
 endif
 
-libmiaconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
-libmiaconsensus_la_LIBADD = $(LIBSECP256K1)
-libmiaconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
-libmiaconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libbitcoinconsensus_la_LDFLAGS = -no-undefined $(RELDFLAGS)
+libbitcoinconsensus_la_LIBADD = $(LIBSECP256K1) $(CRYPTO_LIBS) $(BOOST_LIBS) $(SSL_LIBS) $(LIBBITCOIN_CRYPTO)
+libbitcoinconsensus_la_CPPFLAGS = $(CRYPTO_CFLAGS) $(BITCOIN_INCLUDES) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
 
 endif
-#
 
 CLEANFILES = leveldb/libleveldb.a leveldb/libmemenv.a
+CLEANFILES += *.a *.la crypto/*.a cryptopp/*.a qt/*.a
 CLEANFILES += *.gcda *.gcno
 CLEANFILES += compat/*.gcda compat/*.gcno
-CLEANFILES += consensus/*.gcda consensus/*.gcno
 CLEANFILES += crypto/*.gcda crypto/*.gcno
-CLEANFILES += policy/*.gcda policy/*.gcno
 CLEANFILES += primitives/*.gcda primitives/*.gcno
 CLEANFILES += script/*.gcda script/*.gcno
-CLEANFILES += support/*.gcda support/*.gcno
 CLEANFILES += univalue/*.gcda univalue/*.gcno
-CLEANFILES += wallet/*.gcda wallet/*.gcno
-CLEANFILES += wallet/test/*.gcda wallet/test/*.gcno
 CLEANFILES += zmq/*.gcda zmq/*.gcno
 
 DISTCLEANFILES = obj/build.h
 
 EXTRA_DIST = leveldb
 
+# workaround for travis builds
+dist_pkgdata_DATA = multipliers.hpp univalue/univalue_utffilter.h
+
 clean-local:
 	-$(MAKE) -C leveldb clean
 	-$(MAKE) -C secp256k1 clean
 	-$(MAKE) -C univalue clean
-	-rm -f leveldb/*/*.gcda leveldb/*/*.gcno leveldb/helpers/memenv/*.gcda leveldb/helpers/memenv/*.gcno
+	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
+	-rm -f cryptopp/*.o
 	-rm -f config.h
 
 .rc.o:
@@ -606,23 +745,13 @@ clean-local:
 
 .mm.o:
 	$(AM_V_CXX) $(OBJCXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	  $(CPPFLAGS) $(AM_CXXFLAGS) $(QT_INCLUDES) $(AM_CXXFLAGS) $(PIE_FLAGS) $(CXXFLAGS) -c -o $@ $<
-
-check-symbols: $(bin_PROGRAMS)
-if GLIBC_BACK_COMPAT
-	@echo "Checking glibc back compat..."
-	$(AM_V_at) READELF=$(READELF) CPPFILT=$(CPPFILT) $(top_srcdir)/contrib/devtools/symbol-check.py < $(bin_PROGRAMS)
-endif
-
-check-security: $(bin_PROGRAMS)
-if HARDEN
-	@echo "Checking binary security..."
-	$(AM_V_at) READELF=$(READELF) OBJDUMP=$(OBJDUMP) $(top_srcdir)/contrib/devtools/security-check.py < $(bin_PROGRAMS)
-endif
+	  $(CPPFLAGS) $(AM_CXXFLAGS) $(QT_INCLUDES) $(CXXFLAGS)  -c -o $@ $<
 
 %.pb.cc %.pb.h: %.proto
 	@test -f $(PROTOC)
 	$(AM_V_GEN) $(PROTOC) --cpp_out=$(@D) --proto_path=$(abspath $(<D) $<)
+
+include Makefile.cryptopp.include
 
 if EMBEDDED_LEVELDB
 include Makefile.leveldb.include
@@ -632,14 +761,6 @@ if ENABLE_TESTS
 include Makefile.test.include
 endif
 
-if ENABLE_BENCH
-include Makefile.bench.include
-endif
-
 if ENABLE_QT
 include Makefile.qt.include
-endif
-
-if ENABLE_QT_TESTS
-include Makefile.qttest.include
 endif

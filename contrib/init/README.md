@@ -5,7 +5,6 @@ Upstart: miad.conf
 OpenRC:  miad.openrc
          miad.openrcconf
 CentOS:  miad.init
-OS X:    org.mia.miad.plist
 
 have been made available to assist packagers in creating node packages here.
 

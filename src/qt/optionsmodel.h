@@ -1,5 +1,5 @@
-// Copyright (c) 2011-2015 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2011-2013 The Bitcoin developers       -*- c++ -*-
+// Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_QT_OPTIONSMODEL_H
@@ -24,57 +24,57 @@ class OptionsModel : public QAbstractListModel
     Q_OBJECT
 
 public:
-    explicit OptionsModel(QObject *parent = 0, bool resetSettings = false);
+    explicit OptionsModel(QObject* parent = 0);
 
     enum OptionID {
-        StartAtStartup,         // bool
-        HideTrayIcon,           // bool
-        MinimizeToTray,         // bool
-        MapPortUPnP,            // bool
-        MinimizeOnClose,        // bool
-        ProxyUse,               // bool
-        ProxyIP,                // QString
-        ProxyPort,              // int
-        ProxyUseTor,            // bool
-        ProxyIPTor,             // QString
-        ProxyPortTor,           // int
-        DisplayUnit,            // BitcoinUnits::Unit
-        ThirdPartyTxUrls,       // QString
-        Digits,                 // QString
-        Theme,                  // QString
-        Language,               // QString
-        CoinControlFeatures,    // bool
-        ThreadsScriptVerif,     // int
-        DatabaseCache,          // int
-        SpendZeroConfChange,    // bool
-        ShowMasternodesTab,     // bool
-        ShowAdvancedPSUI,       // bool
-        LowKeysWarning,         // bool
-        PrivateSendRounds,      // int
-        PrivateSendAmount,      // int
-        PrivateSendMultiSession,// bool
-        Listen,                 // bool
+        StartAtStartup,      // bool
+        MinimizeToTray,      // bool
+        MapPortUPnP,         // bool
+        MinimizeOnClose,     // bool
+        ProxyUse,            // bool
+        ProxyIP,             // QString
+        ProxyPort,           // int
+        DisplayUnit,         // BitcoinUnits::Unit
+        ThirdPartyTxUrls,    // QString
+        Digits,              // QString
+        Theme,               // QString
+        Language,            // QString
+        CoinControlFeatures, // bool
+        showMasternodesTab, // bool
+        parallelMasterNode, // bool
+        ThreadsScriptVerif,  // int
+        DatabaseCache,       // int
+        LogFileCount,       // int
+        LogEvents,           // bool
+        ZeroBalanceAddressToken,// bool
+        SpendZeroConfChange, // bool
+        DarksendRounds,      // int
+        AnonymizeLuxAmount,  //int
+        ShowMasternodesTab,  // bool
+        NotUseChangeAddress,  // bool
+        WalletBackups,     // int
+        Listen,              // bool
         OptionIDRowCount,
     };
 
-    void Init(bool resetSettings = false);
+    void Init();
     void Reset();
 
-    int rowCount(const QModelIndex & parent = QModelIndex()) const;
-    QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
-    bool setData(const QModelIndex & index, const QVariant & value, int role = Qt::EditRole);
+    int rowCount(const QModelIndex& parent = QModelIndex()) const;
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
+    bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole);
     /** Updates current unit in memory, settings and emits displayUnitChanged(newUnit) signal */
-    void setDisplayUnit(const QVariant &value);
+    void setDisplayUnit(const QVariant& value);
 
     /* Explicit getters */
-    bool getHideTrayIcon() { return fHideTrayIcon; }
     bool getMinimizeToTray() { return fMinimizeToTray; }
     bool getMinimizeOnClose() { return fMinimizeOnClose; }
     int getDisplayUnit() { return nDisplayUnit; }
     QString getThirdPartyTxUrls() { return strThirdPartyTxUrls; }
     bool getProxySettings(QNetworkProxy& proxy) const;
     bool getCoinControlFeatures() { return fCoinControlFeatures; }
-    bool getShowAdvancedPSUI() { return fShowAdvancedPSUI; }
+    bool getshowMasternodesTab() { return fshowMasternodesTab; }
+    bool getparallelMasterNode() { return fparallelMasterNode; }
     const QString& getOverriddenByCommandLine() { return strOverriddenByCommandLine; }
 
     /* Restart flag helper */
@@ -84,27 +84,29 @@ public:
 
 private:
     /* Qt-only settings */
-    bool fHideTrayIcon;
     bool fMinimizeToTray;
     bool fMinimizeOnClose;
     QString language;
     int nDisplayUnit;
     QString strThirdPartyTxUrls;
     bool fCoinControlFeatures;
-    bool fShowAdvancedPSUI;
+    bool fshowMasternodesTab;
+    bool fparallelMasterNode;
     /* settings that were overriden by command-line */
     QString strOverriddenByCommandLine;
 
     /// Add option to list of GUI options overridden through command line/config file
-    void addOverriddenOption(const std::string &option);
+    void addOverriddenOption(const std::string& option);
 
-Q_SIGNALS:
+signals:
     void displayUnitChanged(int unit);
-    void privateSendRoundsChanged();
-    void privateSentAmountChanged();
-    void advancedPSUIChanged(bool);
+    void darksendRoundsChanged(int);
+    void anonymizeLuxAmountChanged(int);
     void coinControlFeaturesChanged(bool);
-    void hideTrayIconChanged(bool);
+    void showMasternodesTabChanged(bool);
+    void parallelMasterNodeChanged(bool);
+    void zeroBalanceAddressTokenChanged(bool);
+    void walletBackupsChanged(int);
 };
 
 #endif // BITCOIN_QT_OPTIONSMODEL_H

@@ -3,9 +3,8 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "scheduler.h"
-
 #include "reverselock.h"
-
+#include "random.h"
 #include <assert.h>
 #include <boost/bind.hpp>
 #include <utility>
@@ -41,9 +40,8 @@ void CScheduler::serviceQueue()
                 // Wait until there is something to do.
                 newTaskScheduled.wait(lock);
             }
-
-            // Wait until either there is a new task, or until
-            // the time of the first item on the queue:
+// Wait until either there is a new task, or until
+// the time of the first item on the queue:
 
 // wait_until needs boost 1.50 or later; older versions have timed_wait:
 #if BOOST_VERSION < 105000
@@ -54,9 +52,10 @@ void CScheduler::serviceQueue()
 #else
             // Some boost versions have a conflicting overload of wait_until that returns void.
             // Explicitly use a template here to avoid hitting that overload.
-            while (!shouldStop() && !taskQueue.empty() &&
-                   newTaskScheduled.wait_until<>(lock, taskQueue.begin()->first) != boost::cv_status::timeout) {
-                // Keep waiting until timeout
+            while (!shouldStop() && !taskQueue.empty()) {
+                boost::chrono::system_clock::time_point timeToWaitFor = taskQueue.begin()->first;
+                if (newTaskScheduled.wait_until<>(lock, timeToWaitFor) == boost::cv_status::timeout)
+                    break; // Exit loop after timeout, it means we reached the time of the event
             }
 #endif
             // If there are multiple threads, the queue can empty while we're waiting (another
@@ -71,6 +70,7 @@ void CScheduler::serviceQueue()
                 // Unlock before calling f, so it can reschedule itself or another task
                 // without deadlocking:
                 reverse_lock<boost::unique_lock<boost::mutex> > rlock(lock);
+
                 f();
             }
         } catch (...) {
@@ -94,7 +94,7 @@ void CScheduler::stop(bool drain)
     newTaskScheduled.notify_all();
 }
 
-void CScheduler::schedule(CScheduler::Function f, boost::chrono::system_clock::time_point t)
+void CScheduler::scheduler(CScheduler::Function f, boost::chrono::system_clock::time_point t)
 {
     {
         boost::unique_lock<boost::mutex> lock(newTaskMutex);
@@ -103,24 +103,24 @@ void CScheduler::schedule(CScheduler::Function f, boost::chrono::system_clock::t
     newTaskScheduled.notify_one();
 }
 
-void CScheduler::scheduleFromNow(CScheduler::Function f, int64_t deltaSeconds)
+void CScheduler::scheduleFromNow(CScheduler::Function f, int64_t deltaMilliSeconds)
 {
-    schedule(f, boost::chrono::system_clock::now() + boost::chrono::seconds(deltaSeconds));
+    scheduler(f, boost::chrono::system_clock::now() + boost::chrono::milliseconds(deltaMilliSeconds));
 }
 
-static void Repeat(CScheduler* s, CScheduler::Function f, int64_t deltaSeconds)
+static void Repeat(CScheduler* s, CScheduler::Function f, int64_t deltaMilliSeconds)
 {
     f();
-    s->scheduleFromNow(boost::bind(&Repeat, s, f, deltaSeconds), deltaSeconds);
+    s->scheduleFromNow(boost::bind(&Repeat, s, f, deltaMilliSeconds), deltaMilliSeconds);
 }
 
-void CScheduler::scheduleEvery(CScheduler::Function f, int64_t deltaSeconds)
+void CScheduler::scheduleEvery(CScheduler::Function f, int64_t deltaMilliSeconds)
 {
-    scheduleFromNow(boost::bind(&Repeat, this, f, deltaSeconds), deltaSeconds);
+    scheduleFromNow(boost::bind(&Repeat, this, f, deltaMilliSeconds), deltaMilliSeconds);
 }
 
 size_t CScheduler::getQueueInfo(boost::chrono::system_clock::time_point &first,
-                             boost::chrono::system_clock::time_point &last) const
+                                boost::chrono::system_clock::time_point &last) const
 {
     boost::unique_lock<boost::mutex> lock(newTaskMutex);
     size_t result = taskQueue.size();

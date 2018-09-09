@@ -7,13 +7,15 @@
 
 //
 // NOTE:
-// boost::thread / boost::function / boost::chrono should be ported to
-// std::thread / std::function / std::chrono when we support C++11.
+// boost::thread / boost::chrono should be ported to std::thread / std::chrono
+// when we support C++11.
 //
 #include <boost/function.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <boost/thread.hpp>
 #include <map>
+
+#include <sync.h>
 
 //
 // Simple class for background tasks that should be run
@@ -42,17 +44,17 @@ public:
     typedef boost::function<void(void)> Function;
 
     // Call func at/after time t
-    void schedule(Function f, boost::chrono::system_clock::time_point t);
+    void scheduler(Function f, boost::chrono::system_clock::time_point t=boost::chrono::system_clock::now());
 
     // Convenience method: call f once deltaSeconds from now
-    void scheduleFromNow(Function f, int64_t deltaSeconds);
+    void scheduleFromNow(Function f, int64_t deltaMilliSeconds);
 
     // Another convenience method: call f approximately
     // every deltaSeconds forever, starting deltaSeconds from now.
     // To be more precise: every time f is finished, it
     // is rescheduled to run deltaSeconds later. If you
     // need more accurate scheduling, don't use this method.
-    void scheduleEvery(Function f, int64_t deltaSeconds);
+    void scheduleEvery(Function f, int64_t deltaMilliSeconds);
 
     // To keep things as simple as possible, there is no unschedule.
 

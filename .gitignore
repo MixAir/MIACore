@@ -1,3 +1,4 @@
+.gitignore
 *.sublime-project
 *.sublime-workspace
 todo.txt
@@ -12,8 +13,7 @@ src/mia-cli
 src/mia-tx
 src/test/test_mia
 src/qt/test/test_mia-qt
-src/bench/bench_mia
-MIA-Qt.app
+
 # autoreconf
 Makefile.in
 aclocal.m4
@@ -48,7 +48,6 @@ src/qt/moc_*.cpp
 src/qt/forms/ui_*.h
 
 src/qt/test/moc*.cpp
-libconftest.dylib*
 
 .deps
 .dirstamp
@@ -61,7 +60,6 @@ libconftest.dylib*
 *.pyc
 *.o
 *.o-*
-#*.patch
 .mia
 *.a
 *.pb.cc
@@ -82,7 +80,7 @@ libconftest.dylib*
 *.qm
 Makefile
 mia-qt
-Dash-Qt.app
+LUX-Qt.app
 
 # Unit-tests
 Makefile.test
@@ -92,13 +90,15 @@ src/test/buildenv.py
 # Resources cpp
 qrc_*.cpp
 
+# Qt creator
+*.pro.user
+
 # Mac specific
 .DS_Store
 build
 
 #lcov
 *.gcno
-*.gcda
 /*.info
 test_mia.coverage/
 total.coverage/
@@ -109,27 +109,19 @@ linux-coverage-build
 linux-build
 win32-build
 qa/pull-tester/run-bitcoind-for-test.sh
-qa/pull-tester/tests_config.py
+qa/pull-tester/tests-config.sh
 qa/pull-tester/cache/*
 qa/pull-tester/test.*/*
-qa/tmp
-cache/
-share/BitcoindComparisonTool.jar
 
 !src/leveldb*/Makefile
-!depends/Makefile
 
 .cproject
 .project
-.autotools
 /doc/doxygen/
+/nbproject/
 
-libmiaconsensus.pc
-src/qt/mia-qt.bash
-qa/pull-tester/tests-config.sh
+.idea
 
-#development symlinks
-mia-cli
-miad
-mia-qt
-make
+contrib/devtools/split-debug.sh
+
+/src/DEBUG_DUMP_STAKING_INFO.hpp

@@ -1,25 +1,23 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2015 The Bitcoin Core developers
-// Copyright (c) 2014-2017 The MIA Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2014-2015 The Dash developers
+// Copyright (c) 2015-2017 The MIA developers
+// Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "chainparams.h"
 #include "clientversion.h"
-#include "rpc/server.h"
 #include "init.h"
+#include "main.h"
+#include "masternodeconfig.h"
 #include "noui.h"
 #include "scheduler.h"
+#include "rpcserver.h"
+#include "ui_interface.h"
 #include "util.h"
-#include "masternodeconfig.h"
-#include "httpserver.h"
-#include "httprpc.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
-
-#include <stdio.h>
 
 /* Introduction text for doxygen: */
 
@@ -27,7 +25,7 @@
  *
  * \section intro_sec Introduction
  *
- * This is the developer documentation of the reference client for an experimental new digital currency called MIA (https://www.mixair.info/),
+ * This is the developer documentation of the reference client for an experimental new digital currency called MIA (http://www.miacore.io),
  * which enables instant payments to anyone, anywhere in the world. MIA uses peer-to-peer technology to operate
  * with no central authority: managing transactions and issuing money are carried out collectively by the network.
  *
@@ -39,18 +37,16 @@
 
 static bool fDaemon;
 
-void WaitForShutdown(boost::thread_group* threadGroup)
+void DetectShutdownThread(boost::thread_group* threadGroup)
 {
     bool fShutdown = ShutdownRequested();
     // Tell the main threads to shutdown.
-    while (!fShutdown)
-    {
+    while (!fShutdown) {
         MilliSleep(200);
         fShutdown = ShutdownRequested();
     }
-    if (threadGroup)
-    {
-        Interrupt(*threadGroup);
+    if (threadGroup) {
+        threadGroup->interrupt_all();
         threadGroup->join_all();
     }
 }
@@ -63,6 +59,7 @@ bool AppInit(int argc, char* argv[])
 {
     boost::thread_group threadGroup;
     CScheduler scheduler;
+    boost::thread* detectShutdownThread = NULL;
 
     bool fRet = false;
 
@@ -73,59 +70,46 @@ bool AppInit(int argc, char* argv[])
     ParseParameters(argc, argv);
 
     // Process help and version before taking care about datadir
-    if (mapArgs.count("-?") || mapArgs.count("-h") ||  mapArgs.count("-help") || mapArgs.count("-version"))
-    {
-        std::string strUsage = _("MIA Core Daemon") + " " + _("version") + " " + FormatFullVersion() + "\n";
+    if (mapArgs.count("-?") || mapArgs.count("-help") || mapArgs.count("-version")) {
+        std::string strUsage = _("Luxcore Daemon") + " " + _("version") + " " + FormatFullVersion() + "\n";
 
-        if (mapArgs.count("-version"))
-        {
+        if (mapArgs.count("-version")) {
             strUsage += LicenseInfo();
-        }
-        else
-        {
+        } else {
             strUsage += "\n" + _("Usage:") + "\n" +
-                  "  miad [options]                     " + _("Start MIA Core Daemon") + "\n";
+                        "  miad [options]                     " + _("Start Luxcore Daemon") + "\n";
 
             strUsage += "\n" + HelpMessage(HMM_BITCOIND);
         }
 
         fprintf(stdout, "%s", strUsage.c_str());
-        return true;
+        return false;
     }
 
-    try
-    {
-        bool datadirFromCmdLine = mapArgs.count("-datadir") != 0;
-        if (datadirFromCmdLine && !boost::filesystem::is_directory(GetDataDir(false)))
-        {
+    try {
+        if (!boost::filesystem::is_directory(GetDataDir(false))) {
             fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs["-datadir"].c_str());
             return false;
         }
-        try
-        {
+        try {
             ReadConfigFile(mapArgs, mapMultiArgs);
-        } catch (const std::exception& e) {
-            fprintf(stderr,"Error reading configuration file: %s\n", e.what());
+        } catch (std::exception& e) {
+            fprintf(stderr, "Error reading configuration file: %s\n", e.what());
             return false;
         }
-        if (!datadirFromCmdLine && !boost::filesystem::is_directory(GetDataDir(false)))
-        {
-            fprintf(stderr, "Error: Specified data directory \"%s\" from config file does not exist.\n", mapArgs["-datadir"].c_str());
-            return EXIT_FAILURE;
-        }
         // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
-        try {
-            SelectParams(ChainNameFromCommandLine());
-        } catch (const std::exception& e) {
-            fprintf(stderr, "Error: %s\n", e.what());
+        if (!SelectParamsFromCommandLine()) {
+            fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
             return false;
         }
 
         // parse masternode.conf
         std::string strErr;
-        if(!masternodeConfig.read(strErr)) {
-            fprintf(stderr,"Error reading masternode configuration file: %s\n", strErr.c_str());
+        if (!masternodeConfig.read(strErr)) {
+            fprintf(stderr, "Error reading masternode configuration file: %s\n", strErr.c_str());
+#if defined(REQUIRE_MASTERNODE_CONFIG)
             return false;
+#endif
         }
 
         // Command-line RPC
@@ -134,21 +118,18 @@ bool AppInit(int argc, char* argv[])
             if (!IsSwitchChar(argv[i][0]) && !boost::algorithm::istarts_with(argv[i], "mia:"))
                 fCommandLine = true;
 
-        if (fCommandLine)
-        {
+        if (fCommandLine) {
             fprintf(stderr, "Error: There is no RPC client functionality in miad anymore. Use the mia-cli utility instead.\n");
-            exit(EXIT_FAILURE);
+            exit(1);
         }
 #ifndef WIN32
         fDaemon = GetBoolArg("-daemon", false);
-        if (fDaemon)
-        {
-            fprintf(stdout, "MIA Core server starting\n");
+        if (fDaemon) {
+            fprintf(stdout, "MIA server starting\n");
 
             // Daemonize
             pid_t pid = fork();
-            if (pid < 0)
-            {
+            if (pid < 0) {
                 fprintf(stderr, "Error: fork() returned %d errno %d\n", pid, errno);
                 return false;
             }
@@ -165,25 +146,28 @@ bool AppInit(int argc, char* argv[])
 #endif
         SoftSetBoolArg("-server", true);
 
-        // Set this early so that parameter interactions go to console
-        InitLogging();
-        InitParameterInteraction();
+        detectShutdownThread = new boost::thread(boost::bind(&DetectShutdownThread, &threadGroup));
         fRet = AppInit2(threadGroup, scheduler);
-    }
-    catch (const std::exception& e) {
+    } catch (std::exception& e) {
         PrintExceptionContinue(&e, "AppInit()");
     } catch (...) {
         PrintExceptionContinue(NULL, "AppInit()");
     }
 
-    if (!fRet)
-    {
-        Interrupt(threadGroup);
+    if (!fRet) {
+        if (detectShutdownThread)
+            detectShutdownThread->interrupt();
+
+        threadGroup.interrupt_all();
         // threadGroup.join_all(); was left out intentionally here, because we didn't re-test all of
         // the startup-failure cases to make sure they don't result in a hang due to some
         // thread-blocking-waiting-for-another-thread-during-startup case
-    } else {
-        WaitForShutdown(&threadGroup);
+    }
+
+    if (detectShutdownThread) {
+        detectShutdownThread->join();
+        delete detectShutdownThread;
+        detectShutdownThread = NULL;
     }
     Shutdown();
 
@@ -197,5 +181,5 @@ int main(int argc, char* argv[])
     // Connect miad signal handlers
     noui_connect();
 
-    return (AppInit(argc, argv) ? EXIT_SUCCESS : EXIT_FAILURE);
+    return (AppInit(argc, argv) ? 0 : 1);
 }

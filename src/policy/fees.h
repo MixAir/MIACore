@@ -180,7 +180,7 @@ public:
 /** Track confirm delays up to 25 blocks, can't estimate beyond that */
 static const unsigned int MAX_BLOCK_CONFIRMS = 25;
 
-/** Decay of .998 is a half-life of 346 blocks or about 14.4 hours */
+/** Decay of .998 is a half-life of 346 blocks or about 2.4 days */
 static const double DEFAULT_DECAY = .998;
 
 /** Require greater than 95% of X fee transactions to be confirmed within Y blocks for X to be big enough */
@@ -197,8 +197,11 @@ static const double SUFFICIENT_PRITXS = .2;
 static const double MIN_FEERATE = 10;
 static const double MAX_FEERATE = 1e7;
 static const double INF_FEERATE = MAX_MONEY;
+
+#ifndef WIN32
 static const double MIN_PRIORITY = 10;
 static const double MAX_PRIORITY = 1e16;
+#endif
 static const double INF_PRIORITY = 1e9 * MAX_MONEY;
 
 // We have to lump transactions into buckets based on fee or priority, but we want to be able
@@ -223,10 +226,10 @@ public:
 
     /** Process all the transactions that have been included in a block */
     void processBlock(unsigned int nBlockHeight,
-                      std::vector<CTxMemPoolEntry>& entries, bool fCurrentEstimate);
+                      std::vector<const CTxMemPoolEntry*>& entries, bool fCurrentEstimate);
 
     /** Process a transaction confirmed in a block*/
-    void processBlockTx(unsigned int nBlockHeight, const CTxMemPoolEntry& entry);
+    bool processBlockTx(unsigned int nBlockHeight, const CTxMemPoolEntry* entry);
 
     /** Process a transaction accepted to the mempool*/
     void processTransaction(const CTxMemPoolEntry& entry, bool fCurrentEstimate);
@@ -265,8 +268,8 @@ public:
     void Read(CAutoFile& filein);
 
 private:
-    CFeeRate minTrackedFee; //! Passed to constructor to avoid dependency on main
-    double minTrackedPriority; //! Set to AllowFreeThreshold
+    CFeeRate minTrackedFee;    //!< Passed to constructor to avoid dependency on main
+    double minTrackedPriority; //!< Set to AllowFreeThreshold
     unsigned int nBestSeenHeight;
     struct TxStatsInfo
     {
@@ -285,5 +288,18 @@ private:
     /** Breakpoints to help determine whether a transaction was confirmed by priority or Fee */
     CFeeRate feeLikely, feeUnlikely;
     double priLikely, priUnlikely;
+};
+
+class FeeFilterRounder
+{
+public:
+    /** Create new FeeFilterRounder */
+    FeeFilterRounder(const CFeeRate& minIncrementalFee);
+
+    /** Quantize a minimum fee for privacy purpose before broadcast **/
+    CAmount round(CAmount currentMinFee);
+
+private:
+    std::set<double> feeset;
 };
 #endif /*BITCOIN_POLICYESTIMATOR_H */

@@ -8,9 +8,16 @@
 
 #include "amount.h"
 #include "primitives/transaction.h"
+#include "random.h"
 #include "streams.h"
 #include "txmempool.h"
 #include "util.h"
+
+#ifdef WIN32
+static const double MIN_PRIORITY = 10;
+static const double MAX_PRIORITY = 1e16;
+#endif
+
 
 void TxConfirmStats::Initialize(std::vector<double>& defaultBuckets,
                                 unsigned int maxConfirms, double _decay, std::string _dataTypeString)
@@ -286,7 +293,8 @@ void CBlockPolicyEstimator::removeTx(uint256 hash)
 {
     std::map<uint256, TxStatsInfo>::iterator pos = mapMemPoolTxs.find(hash);
     if (pos == mapMemPoolTxs.end()) {
-        LogPrint("estimatefee", "Blockpolicy error mempool tx %s not found for removeTx\n", hash.ToString());
+        LogPrint("estimatefee", "Blockpolicy error mempool tx %s not found for removeTx\n",
+                 hash.ToString().c_str());
         return;
     }
     TxConfirmStats *stats = pos->second.stats;
@@ -346,8 +354,9 @@ void CBlockPolicyEstimator::processTransaction(const CTxMemPoolEntry& entry, boo
     unsigned int txHeight = entry.GetHeight();
     uint256 hash = entry.GetTx().GetHash();
     if (mapMemPoolTxs[hash].stats != NULL) {
-        LogPrint("estimatefee", "Blockpolicy error mempool tx %s already being tracked\n", hash.ToString());
-        return;
+        LogPrint("estimatefee", "Blockpolicy error mempool tx %s already being tracked\n",
+                 hash.ToString().c_str());
+	return;
     }
 
     if (txHeight < nBestSeenHeight) {
@@ -394,45 +403,52 @@ void CBlockPolicyEstimator::processTransaction(const CTxMemPoolEntry& entry, boo
     LogPrint("estimatefee", "\n");
 }
 
-void CBlockPolicyEstimator::processBlockTx(unsigned int nBlockHeight, const CTxMemPoolEntry& entry)
+bool CBlockPolicyEstimator::processBlockTx(unsigned int nBlockHeight, const CTxMemPoolEntry* entry)
 {
-    if (!entry.WasClearAtEntry()) {
+    if (!entry->WasClearAtEntry()) {
         // This transaction depended on other transactions in the mempool to
         // be included in a block before it was able to be included, so
         // we shouldn't include it in our calculations
-        return;
+        return false;
     }
+
+//    if (!removeTx(entry->GetTx().GetHash())) {
+//        // This transaction wasn't being tracked for fee estimation
+//        return false;
+//    }
 
     // How many blocks did it take for miners to include this transaction?
     // blocksToConfirm is 1-based, so a transaction included in the earliest
     // possible block has confirmation count of 1
-    int blocksToConfirm = nBlockHeight - entry.GetHeight();
+    int blocksToConfirm = nBlockHeight - entry->GetHeight();
     if (blocksToConfirm <= 0) {
         // This can't happen because we don't process transactions from a block with a height
         // lower than our greatest seen height
         LogPrint("estimatefee", "Blockpolicy error Transaction had negative blocksToConfirm\n");
-        return;
+        return false;
     }
 
-    // Fees are stored and reported as BTC-per-kb:
-    CFeeRate feeRate(entry.GetFee(), entry.GetTxSize());
+    // Feerates are stored and reported as BTC-per-kb:
+    CFeeRate feeRate(entry->GetFee(), entry->GetTxSize());
 
     // Want the priority of the tx at confirmation.  The priority when it
     // entered the mempool could easily be very small and change quickly
-    double curPri = entry.GetPriority(nBlockHeight);
+    double curPri = entry->GetPriority(nBlockHeight);
 
     // Record this as a priority estimate
-    if (entry.GetFee() == 0 || isPriDataPoint(feeRate, curPri)) {
+    if (entry->GetFee() == 0 || isPriDataPoint(feeRate, curPri)) {
         priStats.Record(blocksToConfirm, curPri);
     }
     // Record this as a fee estimate
     else if (isFeeDataPoint(feeRate, curPri)) {
         feeStats.Record(blocksToConfirm, (double)feeRate.GetFeePerK());
     }
+
+    return true;
 }
 
 void CBlockPolicyEstimator::processBlock(unsigned int nBlockHeight,
-                                         std::vector<CTxMemPoolEntry>& entries, bool fCurrentEstimate)
+                                         std::vector<const CTxMemPoolEntry*>& entries, bool fCurrentEstimate)
 {
     if (nBlockHeight <= nBestSeenHeight) {
         // Ignore side chains and re-orgs; assuming they are random
@@ -577,4 +593,22 @@ void CBlockPolicyEstimator::Read(CAutoFile& filein)
     feeStats.Read(filein);
     priStats.Read(filein);
     nBestSeenHeight = nFileBestSeenHeight;
+}
+
+FeeFilterRounder::FeeFilterRounder(const CFeeRate& minIncrementalFee)
+{
+    CAmount minFeeLimit = minIncrementalFee.GetFeePerK() / 2;
+    feeset.insert(0);
+    for (double bucketBoundary = minFeeLimit; bucketBoundary <= MAX_FEERATE; bucketBoundary *= FEE_SPACING) {
+        feeset.insert(bucketBoundary);
+    }
+}
+
+CAmount FeeFilterRounder::round(CAmount currentMinFee)
+{
+    std::set<double>::iterator it = feeset.lower_bound(currentMinFee);
+    if ((it != feeset.begin() && insecure_rand() % 3 != 0) || it == feeset.end()) {
+        it--;
+    }
+    return *it;
 }
